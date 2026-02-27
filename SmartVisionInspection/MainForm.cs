@@ -34,6 +34,7 @@ namespace SmartVisionInspection
 		}
 		private void LoadDockingWindows()
 		{
+			// 
 			//도킹해제 금지 설정
 			_dockPanel.AllowEndUserDocking = false;
 
