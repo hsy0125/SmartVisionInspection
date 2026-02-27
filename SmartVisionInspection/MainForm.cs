@@ -19,10 +19,11 @@ namespace SmartVisionInspection
 		{
 			InitializeComponent();
 
-			_dockPanel = new DockPanel
+			_dockPanel = new DockPanel()
 			{
 				Dock = DockStyle.Fill
-			};
+			}
+			;
 			Controls.Add(_dockPanel);
 
 			// Visual Studio 2015 테마 적용

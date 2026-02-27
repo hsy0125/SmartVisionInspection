@@ -28,29 +28,12 @@
 		/// </summary>
 		private void InitializeComponent()
 		{
-			this.imageViewCtrl2 = new SmartVisionInspection.UIControl.ImageViewCtrl();
-			this.imageViewCtrl = new SmartVisionInspection.UIControl.ImageViewCtrl();
 			this.menuStrip = new System.Windows.Forms.MenuStrip();
 			this.fileToolStripMenuItem = new System.Windows.Forms.ToolStripMenuItem();
 			this.imageOpenToolStripMenuItem = new System.Windows.Forms.ToolStripMenuItem();
 			this.imegeSaveToolStripMenuItem = new System.Windows.Forms.ToolStripMenuItem();
 			this.menuStrip.SuspendLayout();
 			this.SuspendLayout();
-			// 
-			// imageViewCtrl2
-			// 
-			this.imageViewCtrl2.Location = new System.Drawing.Point(58, 97);
-			this.imageViewCtrl2.Name = "imageViewCtrl2";
-			this.imageViewCtrl2.Size = new System.Drawing.Size(150, 150);
-			this.imageViewCtrl2.TabIndex = 1;
-			// 
-			// imageViewCtrl
-			// 
-			this.imageViewCtrl.Dock = System.Windows.Forms.DockStyle.Fill;
-			this.imageViewCtrl.Location = new System.Drawing.Point(0, 33);
-			this.imageViewCtrl.Name = "imageViewCtrl";
-			this.imageViewCtrl.Size = new System.Drawing.Size(752, 498);
-			this.imageViewCtrl.TabIndex = 2;
 			// 
 			// menuStrip
 			// 
@@ -76,23 +59,22 @@
 			// imageOpenToolStripMenuItem
 			// 
 			this.imageOpenToolStripMenuItem.Name = "imageOpenToolStripMenuItem";
-			this.imageOpenToolStripMenuItem.Size = new System.Drawing.Size(270, 34);
+			this.imageOpenToolStripMenuItem.Size = new System.Drawing.Size(210, 34);
 			this.imageOpenToolStripMenuItem.Text = "이미지 열기";
 			this.imageOpenToolStripMenuItem.Click += new System.EventHandler(this.imageOpenToolStripMenuItem_Click);
 			// 
 			// imegeSaveToolStripMenuItem
 			// 
 			this.imegeSaveToolStripMenuItem.Name = "imegeSaveToolStripMenuItem";
-			this.imegeSaveToolStripMenuItem.Size = new System.Drawing.Size(270, 34);
+			this.imegeSaveToolStripMenuItem.Size = new System.Drawing.Size(210, 34);
 			this.imegeSaveToolStripMenuItem.Text = "이미지 저장";
 			// 
 			// MainForm
 			// 
 			this.ClientSize = new System.Drawing.Size(752, 531);
-			this.Controls.Add(this.imageViewCtrl);
-			this.Controls.Add(this.imageViewCtrl2);
 			this.Controls.Add(this.menuStrip);
 			this.Name = "MainForm";
+			this.Text = "MainForm";
 			this.menuStrip.ResumeLayout(false);
 			this.menuStrip.PerformLayout();
 			this.ResumeLayout(false);
@@ -101,9 +83,6 @@
 		}
 
 		#endregion
-
-		private UIControl.ImageViewCtrl imageViewCtrl2;
-		private UIControl.ImageViewCtrl imageViewCtrl;
 		private System.Windows.Forms.MenuStrip menuStrip;
 		private System.Windows.Forms.ToolStripMenuItem fileToolStripMenuItem;
 		private System.Windows.Forms.ToolStripMenuItem imageOpenToolStripMenuItem;
