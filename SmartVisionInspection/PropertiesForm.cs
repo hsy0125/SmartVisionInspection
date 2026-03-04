@@ -15,7 +15,8 @@ namespace SmartVisionInspection
 	public enum PropertyType
 	{
 		Binary,
-		Filter
+		Filter,
+		AIModule
 	}
 	public partial class PropertiesForm : DockContent
 	{
@@ -27,6 +28,8 @@ namespace SmartVisionInspection
 
 			LoadOptionControl(PropertyType.Filter);
 			LoadOptionControl(PropertyType.Binary);
+			LoadOptionControl(PropertyType.AIModule);
+
 		}
 
 		//#3_CAMERAVIEW_PROPERTY#6 속성탭이 있다면 그것을 반환하고, 없다면 생성
@@ -79,6 +82,10 @@ namespace SmartVisionInspection
 				case PropertyType.Filter:
 					ImageFilterProp filterProp = new ImageFilterProp();
 					curProp = filterProp;
+					break;
+				case PropertyType.AIModule:
+					AIModuleProp aiModuleProp = new AIModuleProp();
+					curProp = aiModuleProp;
 					break;
 				default:
 					MessageBox.Show("유효하지 않은 옵션입니다.");

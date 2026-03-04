@@ -43,6 +43,21 @@ namespace SmartVisionInspection
 
 			imageViewer.Location = new System.Drawing.Point(margin, margin);
 		}
+		public void UpdateDisplay(Bitmap bitmap = null)
+		{
+			if (imageViewer != null)
+				imageViewer.LoadBitmap(bitmap);
+		}
+
+		public Bitmap GetDisplayImage()
+		{
+			Bitmap curImage = null;
+
+			if (imageViewer != null)
+				curImage = imageViewer.GetCurBitmap();
+
+			return curImage;
+		}
 	}
 
 }

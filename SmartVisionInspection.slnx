@@ -1,3 +1,9 @@
 <Solution>
-  <Project Path="SmartVisionInspection/SmartVisionInspection.csproj" Id="c8ed6330-a8b4-4a77-9a1e-1627cd2e03ee" />
+  <Configurations>
+    <Platform Name="Any CPU" />
+    <Platform Name="x64" />
+  </Configurations>
+  <Project Path="SmartVisionInspection/SmartVisionInspection.csproj" Id="c8ed6330-a8b4-4a77-9a1e-1627cd2e03ee">
+    <Platform Solution="*|x64" Project="x64" />
+  </Project>
 </Solution>

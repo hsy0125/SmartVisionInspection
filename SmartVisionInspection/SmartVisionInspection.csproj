@@ -32,9 +32,35 @@
     <ErrorReport>prompt</ErrorReport>
     <WarningLevel>4</WarningLevel>
   </PropertyGroup>
+  <PropertyGroup Condition="'$(Configuration)|$(Platform)' == 'Debug|x64'">
+    <DebugSymbols>true</DebugSymbols>
+    <OutputPath>bin\x64\Debug\</OutputPath>
+    <DefineConstants>DEBUG;TRACE</DefineConstants>
+    <DebugType>full</DebugType>
+    <PlatformTarget>x64</PlatformTarget>
+    <LangVersion>7.3</LangVersion>
+    <ErrorReport>prompt</ErrorReport>
+    <Prefer32Bit>true</Prefer32Bit>
+  </PropertyGroup>
+  <PropertyGroup Condition="'$(Configuration)|$(Platform)' == 'Release|x64'">
+    <OutputPath>bin\x64\Release\</OutputPath>
+    <DefineConstants>TRACE</DefineConstants>
+    <Optimize>true</Optimize>
+    <DebugType>pdbonly</DebugType>
+    <PlatformTarget>x64</PlatformTarget>
+    <LangVersion>7.3</LangVersion>
+    <ErrorReport>prompt</ErrorReport>
+    <Prefer32Bit>true</Prefer32Bit>
+  </PropertyGroup>
   <ItemGroup>
     <Reference Include="PresentationCore" />
     <Reference Include="PresentationFramework" />
+    <Reference Include="SaigeVision.Net.Core.V2">
+      <HintPath>..\..\WindowsFormsAppPaint_2_25\ExternalDll\SaigeVision.Net.Core.V2.dll</HintPath>
+    </Reference>
+    <Reference Include="SaigeVision.Net.V2">
+      <HintPath>..\..\WindowsFormsAppPaint_2_25\ExternalDll\SaigeVision.Net.V2.dll</HintPath>
+    </Reference>
     <Reference Include="System" />
     <Reference Include="System.Core" />
     <Reference Include="System.Xaml" />
@@ -62,6 +88,9 @@
     <Compile Include="CameraForm.Designer.cs">
       <DependentUpon>CameraForm.cs</DependentUpon>
     </Compile>
+    <Compile Include="Core\Global.cs" />
+    <Compile Include="Core\InspStage.cs" />
+    <Compile Include="Inspect\SaigeAI.cs" />
     <Compile Include="MainForm.cs">
       <SubType>Form</SubType>
     </Compile>
@@ -76,6 +105,12 @@
       <DependentUpon>PropertiesForm.cs</DependentUpon>
     </Compile>
     <Compile Include="Properties\AssemblyInfo.cs" />
+    <Compile Include="Property\AIModuleProp.cs">
+      <SubType>UserControl</SubType>
+    </Compile>
+    <Compile Include="Property\AIModuleProp.Designer.cs">
+      <DependentUpon>AIModuleProp.cs</DependentUpon>
+    </Compile>
     <Compile Include="Property\BinaryProp.cs">
       <SubType>UserControl</SubType>
     </Compile>
@@ -112,6 +147,9 @@
       <AutoGen>True</AutoGen>
       <DependentUpon>Resources.resx</DependentUpon>
     </Compile>
+    <EmbeddedResource Include="Property\AIModuleProp.resx">
+      <DependentUpon>AIModuleProp.cs</DependentUpon>
+    </EmbeddedResource>
     <EmbeddedResource Include="Property\BinaryProp.resx">
       <DependentUpon>BinaryProp.cs</DependentUpon>
     </EmbeddedResource>
