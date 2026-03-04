@@ -53,7 +53,10 @@ namespace SmartVisionInspection.UIControl
 			// 화면 깜빡임을 방지하기 위한 더블 버퍼링 설정
 			DoubleBuffered = true;
 		}
-
+		public Bitmap GetCurBitmap()
+		{
+			return _bitmapImage;
+		}
 		//줌에 따른 좌표 계산 기능 수정 
 		private void ResizeCanvas()
 		{
