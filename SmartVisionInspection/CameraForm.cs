@@ -3,12 +3,13 @@ using System.Collections.Generic;
 using System.ComponentModel;
 using System.Data;
 using System.Drawing;
+using System.IO;
 using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
 using System.Windows.Forms;
+using SmartVisionInspection.Core;
 using WeifenLuo.WinFormsUI.Docking;
-using System.IO;
 
 namespace SmartVisionInspection
 {
@@ -45,6 +46,13 @@ namespace SmartVisionInspection
 		}
 		public void UpdateDisplay(Bitmap bitmap = null)
 		{
+			if (bitmap == null)
+			{
+				//#6_INSP_STAGE#3 업데이트시 bitmap이 없다면 InspSpace에서 가져온다
+				bitmap = Global.Inst.InspStage.GetBitmap(0);
+				if (bitmap == null)
+					return;
+			}
 			if (imageViewer != null)
 				imageViewer.LoadBitmap(bitmap);
 		}

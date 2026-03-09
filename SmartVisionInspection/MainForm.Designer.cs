@@ -70,11 +70,12 @@
 			this.imegeSaveToolStripMenuItem.Text = "이미지 저장";
 			// 
 			// MainForm
-			// 
+			//	
 			this.ClientSize = new System.Drawing.Size(752, 531);
 			this.Controls.Add(this.menuStrip);
 			this.Name = "MainForm";
 			this.Text = "MainForm";
+			this.FormClosing += new System.Windows.Forms.FormClosingEventHandler(this.MainForm_FormClosing);
 			this.menuStrip.ResumeLayout(false);
 			this.menuStrip.PerformLayout();
 			this.ResumeLayout(false);
