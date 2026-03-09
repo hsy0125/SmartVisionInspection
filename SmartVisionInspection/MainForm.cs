@@ -7,6 +7,7 @@ using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
 using System.Windows.Forms;
+using SmartVisionInspection.Core;
 using WeifenLuo.WinFormsUI.Docking;
 
 namespace SmartVisionInspection
@@ -31,6 +32,9 @@ namespace SmartVisionInspection
 
 			//#2_DOCKPANEL#6 도킹 윈도우 로드 메서드 호출
 			LoadDockingWindows();
+
+			//#6_INSP_STAGE#1 전역 인스턴스 초기화
+			Global.Inst.Initialize();
 		}
 		private void LoadDockingWindows()
 		{
@@ -41,6 +45,10 @@ namespace SmartVisionInspection
 			//메인폼 설정
 			var cameraWindow = new CameraForm();
 			cameraWindow.Show(_dockPanel, DockState.Document);
+			
+			//메인폼 설정
+			var runWindow = new RunForm();
+			runWindow.Show(cameraWindow.Pane, DockAlignment.Bottom, 0.2);
 
 			//속성창 추가
 			var propWindow = new PropertiesForm();
@@ -68,6 +76,11 @@ namespace SmartVisionInspection
 					cameraForm.LoadImage(filePath);
 				}
 			}
+		}
+
+		private void MainForm_FormClosing(object sender, FormClosingEventArgs e)
+		{
+			Global.Inst.Dispose();
 		}
 	}
 }
