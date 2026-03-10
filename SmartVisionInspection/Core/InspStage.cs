@@ -4,18 +4,30 @@ using System.Drawing;
 using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
+using OpenCvSharp.Extensions;
 using SmartVisionInspection.Grab;
 using SmartVisionInspection.Inspect;
 
 namespace SmartVisionInspection.Core
 {
-	public class InspStage : IDisposable
+	public class InspStage : IDisposable 
 	{
+		
+
 		public static readonly int MAX_GRAB_BUF = 5;
 
 		private ImageSpace _imageSpace = null;
-		private HikRobotCam _grabManager = null;
+		//private HikRobotCam _grabManager = null;
+		private GrabModel _grabManager = null;
+		private CameraType _camType = CameraType.WebCam;
+		// 영상용 
+		private bool _isVideoMode = false;
+
 		SaigeAI _saigeAI; // SaigeAI 인스턴스
+
+		////#7_BINARY_PREVIEW#1 이진화 프리뷰에 필요한 변수 선언
+		//BlobAlgorithm _blobAlgorithm = null; // Blob 알고리즘 인스턴스
+		private PreviewImage _previewImage = null;
 
 		public InspStage() { }
 		public ImageSpace ImageSpace
@@ -23,6 +35,8 @@ namespace SmartVisionInspection.Core
 			get => _imageSpace;
 		}
 
+		//#8_LIVE#1 LIVE 모드 프로퍼티
+		public bool LiveMode { get; set; } = false;
 
 		public SaigeAI AIModule
 		{
@@ -38,7 +52,21 @@ namespace SmartVisionInspection.Core
 		{
 
 			_imageSpace = new ImageSpace();
-			_grabManager = new HikRobotCam();
+
+			switch (_camType)
+			{
+				//#5_CAMERA_INTERFACE#5 타입에 따른 카메라 인스턴스 생성
+				case CameraType.WebCam:
+					{
+						_grabManager = new WebCam();
+						break;
+					}
+				case CameraType.HikRobotCam:
+					{
+						_grabManager = new HikRobotCam();
+						break;
+					}
+			}
 
 			if (_grabManager.InitGrab() == true)
 			{
@@ -70,7 +98,7 @@ namespace SmartVisionInspection.Core
 
 			SetBuffer(bufferCount);
 
-			//_grabManager.SetExposureTime(25000);
+			//_grabManager.SetExposureTime(40000);
 
 		}
 		public void SetBuffer(int bufferCount)
@@ -94,23 +122,37 @@ namespace SmartVisionInspection.Core
 			}
 		}
 
+
 		public void Grab(int bufferIndex)
 		{
 			if (_grabManager == null)
 				return;
-
+	
 			_grabManager.Grab(bufferIndex, true);
 		}
 
 		//영상 취득 완료 이벤트 발생시 후처리
-		private void _multiGrab_TransferCompleted(object sender, object e)
+		private async void _multiGrab_TransferCompleted(object sender, object e)
 		{
 			int bufferIndex = (int)e;
 			Console.WriteLine($"_multiGrab_TransferCompleted {bufferIndex}");
 
 			_imageSpace.Split(bufferIndex);
-
 			DisplayGrabImage(bufferIndex);
+
+			if (_previewImage != null)
+			{
+				Bitmap bitmap = ImageSpace.GetBitmap(0);
+				_previewImage.SetImage(BitmapConverter.ToMat(bitmap));
+			}
+
+			//#8_LIVE#2 LIVE 모드일때, Grab을 계속 실행하여, 반복되도록 구현
+			//이 함수는 await를 사용하여 비동기적으로 실행되어, 함수를 async로 선언해야 합니다.
+			if (LiveMode)
+			{
+				await Task.Delay(100);  // 비동기 대기
+				_grabManager.Grab(bufferIndex, true);  // 다음 촬영 시작
+			}
 		}
 
 		private void DisplayGrabImage(int bufferIndex)

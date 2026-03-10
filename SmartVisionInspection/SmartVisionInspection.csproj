@@ -101,7 +101,10 @@
     <Compile Include="Core\Global.cs" />
     <Compile Include="Core\ImageSpace.cs" />
     <Compile Include="Core\InspStage.cs" />
+    <Compile Include="Core\PreviewImage.cs" />
+    <Compile Include="Grab\GrabModel.cs" />
     <Compile Include="Grab\HikRobotCam.cs" />
+    <Compile Include="Grab\WebCam.cs" />
     <Compile Include="Inspect\SaigeAI.cs" />
     <Compile Include="MainForm.cs">
       <SubType>Form</SubType>
