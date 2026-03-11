@@ -1,6 +1,6 @@
-﻿namespace SmartVisionInspection
+﻿namespace SmartVisionInspection.Setting
 {
-	partial class CameraForm
+	partial class SetupForm
 	{
 		/// <summary>
 		/// Required designer variable.
@@ -28,31 +28,32 @@
 		/// </summary>
 		private void InitializeComponent()
 		{
-			this.imageViewer = new SmartVisionInspection.UIControl.ImageViewCtrl();
+			this.tabSetting = new System.Windows.Forms.TabControl();
 			this.SuspendLayout();
 			// 
-			// imageViewer
+			// tabSetting
 			// 
-			this.imageViewer.Dock = System.Windows.Forms.DockStyle.Fill;
-			this.imageViewer.Location = new System.Drawing.Point(0, 0);
-			this.imageViewer.Name = "imageViewer";
-			this.imageViewer.Size = new System.Drawing.Size(635, 514);
-			this.imageViewer.TabIndex = 0;
+			this.tabSetting.Dock = System.Windows.Forms.DockStyle.Fill;
+			this.tabSetting.Location = new System.Drawing.Point(0, 0);
+			this.tabSetting.Name = "tabSetting";
+			this.tabSetting.SelectedIndex = 0;
+			this.tabSetting.Size = new System.Drawing.Size(800, 450);
+			this.tabSetting.TabIndex = 0;
 			// 
-			// CameraForm
+			// SetupForm
 			// 
 			this.AutoScaleDimensions = new System.Drawing.SizeF(10F, 18F);
 			this.AutoScaleMode = System.Windows.Forms.AutoScaleMode.Font;
-			this.ClientSize = new System.Drawing.Size(635, 514);
-			this.Controls.Add(this.imageViewer);
-			this.Name = "CameraForm";
-			this.Text = "CameraForm";
+			this.ClientSize = new System.Drawing.Size(800, 450);
+			this.Controls.Add(this.tabSetting);
+			this.Name = "SetupForm";
+			this.Text = "SetupForm";
 			this.ResumeLayout(false);
 
 		}
 
 		#endregion
 
-		private UIControl.ImageViewCtrl imageViewer;
+		private System.Windows.Forms.TabControl tabSetting;
 	}
 }

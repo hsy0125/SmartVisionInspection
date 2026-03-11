@@ -4,6 +4,7 @@ using System.Drawing;
 using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
+using OpenCvSharp;
 using OpenCvSharp.Extensions;
 using SmartVisionInspection.Grab;
 using SmartVisionInspection.Inspect;
@@ -47,6 +48,17 @@ namespace SmartVisionInspection.Core
 				return _saigeAI;
 			}
 		}
+
+		////#7_BINARY_PREVIEW#2 이진화 알고리즘과 프리뷰 변수에 대한 프로퍼티 생성
+		//public BlobAlgorithm BlobAlgorithm
+		//{
+		//	get => _blobAlgorithm;
+		//}
+
+		//public PreviewImage PreView
+		//{
+		//	get => _previewImage;
+		//}
 
 		public bool Initialize()
 		{
@@ -191,6 +203,22 @@ namespace SmartVisionInspection.Core
 				return null;
 
 			return Global.Inst.InspStage.ImageSpace.GetBitmap();
+		}
+
+		//#7_BINARY_PREVIEW#4 이진화 프리뷰를 위해, ImageSpace에서 이미지 가져오기
+		public Mat GetMat()
+		{
+			return Global.Inst.InspStage.ImageSpace.GetMat();
+		}
+
+		//#7_BINARY_PREVIEW#5 이진화 임계값 변경시, 프리뷰 갱신
+		public void RedrawMainView()
+		{
+			CameraForm cameraForm = MainForm.GetDockForm<CameraForm>();
+			if (cameraForm != null)
+			{
+				cameraForm.UpdateImageViewer();
+			}
 		}
 		#region Disposable
 
