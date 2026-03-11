@@ -6,14 +6,15 @@ using System.Text;
 using System.Threading.Tasks;
 using OpenCvSharp;
 using OpenCvSharp.Extensions;
+using SmartVisionInspection.Algorithm;
 using SmartVisionInspection.Grab;
 using SmartVisionInspection.Inspect;
+using System.Data.SqlClient;
 
 namespace SmartVisionInspection.Core
 {
 	public class InspStage : IDisposable 
 	{
-		
 
 		public static readonly int MAX_GRAB_BUF = 5;
 
@@ -27,8 +28,8 @@ namespace SmartVisionInspection.Core
 		SaigeAI _saigeAI; // SaigeAI 인스턴스
 
 		////#7_BINARY_PREVIEW#1 이진화 프리뷰에 필요한 변수 선언
-		//BlobAlgorithm _blobAlgorithm = null; // Blob 알고리즘 인스턴스
-		private PreviewImage _previewImage = null;
+		BlobAlgorithm _blobAlgorithm = null; // Blob 알고리즘 인스턴스
+		PreviewImage _previewImage = null;
 
 		public InspStage() { }
 		public ImageSpace ImageSpace
@@ -49,21 +50,24 @@ namespace SmartVisionInspection.Core
 			}
 		}
 
-		////#7_BINARY_PREVIEW#2 이진화 알고리즘과 프리뷰 변수에 대한 프로퍼티 생성
-		//public BlobAlgorithm BlobAlgorithm
-		//{
-		//	get => _blobAlgorithm;
-		//}
+		//#7_BINARY_PREVIEW#2 이진화 알고리즘과 프리뷰 변수에 대한 프로퍼티 생성
+		public BlobAlgorithm BlobAlgorithm
+		{
+			get => _blobAlgorithm;
+		}
 
-		//public PreviewImage PreView
-		//{
-		//	get => _previewImage;
-		//}
+		public PreviewImage PreView
+		{
+			get => _previewImage;
+		}
 
 		public bool Initialize()
 		{
-
 			_imageSpace = new ImageSpace();
+
+			//#7_BINARY_PREVIEW#3 이진화 알고리즘과 프리뷰 변수 인스턴스 생성
+			_blobAlgorithm = new BlobAlgorithm();
+			_previewImage = new PreviewImage();
 
 			switch (_camType)
 			{
@@ -80,7 +84,7 @@ namespace SmartVisionInspection.Core
 					}
 			}
 
-			if (_grabManager.InitGrab() == true)
+			if (_grabManager != null && _grabManager.InitGrab() == true)
 			{
 				_grabManager.TransferCompleted += _multiGrab_TransferCompleted;
 
@@ -110,9 +114,25 @@ namespace SmartVisionInspection.Core
 
 			SetBuffer(bufferCount);
 
-			//_grabManager.SetExposureTime(40000);
+			//_grabManager.SetExposureTime(25000);
 
+			//#7_BINARY_PREVIEW#9 이진화 알고리즘을 속성창에 연동하기 위한 함수 구현            
+			UpdateProperty();
 		}
+
+
+		private void UpdateProperty()
+		{
+			if (BlobAlgorithm is null)
+				return;
+
+			PropertiesForm propertiesForm = MainForm.GetDockForm<PropertiesForm>();
+			if (propertiesForm is null)
+				return;
+
+			propertiesForm.UpdateProperty(BlobAlgorithm);
+		}
+
 		public void SetBuffer(int bufferCount)
 		{
 			if (_grabManager == null)
@@ -134,12 +154,11 @@ namespace SmartVisionInspection.Core
 			}
 		}
 
-
 		public void Grab(int bufferIndex)
 		{
 			if (_grabManager == null)
 				return;
-	
+
 			_grabManager.Grab(bufferIndex, true);
 		}
 
@@ -150,6 +169,7 @@ namespace SmartVisionInspection.Core
 			Console.WriteLine($"_multiGrab_TransferCompleted {bufferIndex}");
 
 			_imageSpace.Split(bufferIndex);
+
 			DisplayGrabImage(bufferIndex);
 
 			if (_previewImage != null)
@@ -157,7 +177,6 @@ namespace SmartVisionInspection.Core
 				Bitmap bitmap = ImageSpace.GetBitmap(0);
 				_previewImage.SetImage(BitmapConverter.ToMat(bitmap));
 			}
-
 			//#8_LIVE#2 LIVE 모드일때, Grab을 계속 실행하여, 반복되도록 구현
 			//이 함수는 await를 사용하여 비동기적으로 실행되어, 함수를 async로 선언해야 합니다.
 			if (LiveMode)
@@ -220,6 +239,8 @@ namespace SmartVisionInspection.Core
 				cameraForm.UpdateImageViewer();
 			}
 		}
+
+
 		#region Disposable
 
 		private bool disposed = false; // to detect redundant calls
@@ -236,6 +257,11 @@ namespace SmartVisionInspection.Core
 						_saigeAI.Dispose();
 						_saigeAI = null;
 					}
+					if (_grabManager != null)
+					{
+						_grabManager.Dispose();
+						_grabManager = null;
+					}
 				}
 
 				// Dispose unmanaged managed resources.
@@ -251,4 +277,5 @@ namespace SmartVisionInspection.Core
 
 		#endregion //Disposable
 	}
+
 }

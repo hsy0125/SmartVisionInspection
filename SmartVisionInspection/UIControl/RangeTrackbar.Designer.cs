@@ -1,6 +1,6 @@
-﻿namespace SmartVisionInspection.Property
+﻿namespace SmartVisionInspection.UIControl
 {
-	partial class ImageFilterProp
+	partial class RangeTrackbar
 	{
 		/// <summary> 
 		/// 필수 디자이너 변수입니다.
@@ -28,30 +28,10 @@
 		/// </summary>
 		private void InitializeComponent()
 		{
-			this.cbImageFilter = new System.Windows.Forms.ComboBox();
-			this.SuspendLayout();
-			// 
-			// cbImageFilter
-			// 
-			this.cbImageFilter.FormattingEnabled = true;
-			this.cbImageFilter.Location = new System.Drawing.Point(25, 37);
-			this.cbImageFilter.Name = "cbImageFilter";
-			this.cbImageFilter.Size = new System.Drawing.Size(218, 26);
-			this.cbImageFilter.TabIndex = 1;
-			// 
-			// ImageFilterProp
-			// 
-			this.AutoScaleDimensions = new System.Drawing.SizeF(10F, 18F);
+			components = new System.ComponentModel.Container();
 			this.AutoScaleMode = System.Windows.Forms.AutoScaleMode.Font;
-			this.Controls.Add(this.cbImageFilter);
-			this.Name = "ImageFilterProp";
-			this.Size = new System.Drawing.Size(382, 325);
-			this.ResumeLayout(false);
-
 		}
 
 		#endregion
-
-		private System.Windows.Forms.ComboBox cbImageFilter;
 	}
 }
