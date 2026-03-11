@@ -8,6 +8,7 @@ using System.Text;
 using System.Threading.Tasks;
 using System.Windows.Forms;
 using SmartVisionInspection.Core;
+using SmartVisionInspection.Setting;
 using WeifenLuo.WinFormsUI.Docking;
 
 namespace SmartVisionInspection
@@ -45,7 +46,7 @@ namespace SmartVisionInspection
 			//메인폼 설정
 			var cameraWindow = new CameraForm();
 			cameraWindow.Show(_dockPanel, DockState.Document);
-			
+
 			//메인폼 설정
 			var runWindow = new RunForm();
 			runWindow.Show(cameraWindow.Pane, DockAlignment.Bottom, 0.2);
@@ -82,5 +83,12 @@ namespace SmartVisionInspection
 		{
 			Global.Inst.Dispose();
 		}
+
+		private void setupToolStripMenuItem_Click(object sender, EventArgs e)
+		{
+			SetupForm setupForm = new SetupForm();
+			setupForm.ShowDialog();
+		}
 	}
+	
 }
