@@ -92,6 +92,8 @@
     <Reference Include="WindowsBase" />
   </ItemGroup>
   <ItemGroup>
+    <Compile Include="Algorithm\BlobAlgorithm.cs" />
+    <Compile Include="Algorithm\InspAlgorithm.cs" />
     <Compile Include="CameraForm.cs">
       <SubType>Form</SubType>
     </Compile>
@@ -168,6 +170,12 @@
     </Compile>
     <Compile Include="UIControl\ImageViewCtrl.Designer.cs">
       <DependentUpon>ImageViewCtrl.cs</DependentUpon>
+    </Compile>
+    <Compile Include="UIControl\RangeTrackbar.cs">
+      <SubType>UserControl</SubType>
+    </Compile>
+    <Compile Include="UIControl\RangeTrackbar.Designer.cs">
+      <DependentUpon>RangeTrackbar.cs</DependentUpon>
     </Compile>
     <Compile Include="Util\BitmapExtension.cs" />
     <Compile Include="Util\XmlHelper.cs" />
