@@ -64,6 +64,7 @@
 			this.btnStart.TabIndex = 2;
 			this.btnStart.Text = "검사";
 			this.btnStart.UseVisualStyleBackColor = true;
+			this.btnStart.Click += new System.EventHandler(this.btnStart_Click);
 			// 
 			// RunForm
 			// 

@@ -35,9 +35,9 @@ namespace SmartVisionInspection
 			}
 		}
 
-		//private void btnStart_Click(object sender, EventArgs e)
-		//{
-		//	Global.Inst.InspStage.TryInspection();
-		//}
+		private void btnStart_Click(object sender, EventArgs e)
+		{
+			Global.Inst.InspStage.TryInspection();
+		}
 	}
 }
