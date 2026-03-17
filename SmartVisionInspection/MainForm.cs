@@ -50,7 +50,9 @@ namespace SmartVisionInspection
 			//메인폼 설정
 			var runWindow = new RunForm();
 			runWindow.Show(cameraWindow.Pane, DockAlignment.Bottom, 0.2);
-
+			//#11_MODEL_TREE#1 검사 결과창 우측에 40% 비율로 모델트리 추가
+			var modelTreeWindow = new ModelTreeForm();
+			modelTreeWindow.Show(runWindow.Pane, DockAlignment.Right, 0.3);	
 			//속성창 추가
 			var propWindow = new PropertiesForm();
 			propWindow.Show(_dockPanel, DockState.DockRight);

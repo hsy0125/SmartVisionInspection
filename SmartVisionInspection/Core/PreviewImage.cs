@@ -4,6 +4,7 @@ using System.Drawing;
 using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
+using SmartVisionInspection.Teach;
 using OpenCvSharp;
 using OpenCvSharp.Extensions;
 using SmartVisionInspection.Property;
@@ -14,12 +15,20 @@ namespace SmartVisionInspection.Core
 	{
 		private Mat _orinalImage = null;
 		private Mat _previewImage = null;
-		private bool _usePreview = true;
+		//private bool _usePreview = true;
 
+		//#10_INSPWINDOW#5 프리뷰를 위한 InspWindow 변수
+		private InspWindow _inspWindow = null;
+		private bool _usePreview = true;
 		public void SetImage(Mat image)
 		{
 			_orinalImage = image;
 			_previewImage = new Mat();
+		}
+		//#10_INSPWINDOW#6 프리뷰를 위한 InspWindow 설정
+		public void SetInspWindow(InspWindow inspwindow)
+		{
+			_inspWindow = inspwindow;
 		}
 		public void SetBinary(int lowerValue, int upperValue, bool invert, ShowBinaryMode showBinMode)
 		{
@@ -43,6 +52,11 @@ namespace SmartVisionInspection.Core
 
 			Rect windowArea = new Rect(0, 0, _orinalImage.Width, _orinalImage.Height);
 
+			//#10_INSPWINDOW#7 InspWindow가 있다면 프리뷰 설정 영역을 ROI로 변경
+			if (_inspWindow != null)
+			{
+				windowArea = _inspWindow.WindowArea;
+			}
 			Mat orgRoi = _orinalImage[windowArea];
 
 			Mat grayImage = new Mat();

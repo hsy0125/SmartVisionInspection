@@ -6,8 +6,16 @@ using System.Threading.Tasks;
 
 namespace SmartVisionInspection.Core
 {
+	//#10_INSPWINDOW#4 InspWindow 정의
+	public enum InspWindowType
+	{
+		None = 0,
+		Base,
+		Body,
+		Sub
+	}
 
-    public enum DecisionType
+	public enum DecisionType
     {
         None = 0,
         Good,           //양품
