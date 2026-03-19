@@ -14,6 +14,7 @@ using OpenCvSharp;
 using OpenCvSharp.Extensions;
 
 using SmartVisionInspection.Inspect;
+using System.IO;
 
 
 namespace SmartVisionInspection.Core
@@ -326,6 +327,7 @@ namespace SmartVisionInspection.Core
 							BlobAlgorithm blobAlgo = (BlobAlgorithm)inspAlgo;
 
 							Mat srcImage = Global.Inst.InspStage.GetMat();
+
 							blobAlgo.SetInspData(srcImage);
 							break;
 						}
@@ -555,8 +557,39 @@ namespace SmartVisionInspection.Core
 				cameraForm.UpdateImageViewer();
 			}
 		}
+		//#12_MODEL SAVE#4 Mainform에서 호출되는 모델 열기와 저장 함수        
+		public bool LoadModel(string filePath)
+		{
+			Console.Write($"모델 로딩:{filePath}");
 
+			_model = _model.Load(filePath);
 
+			if (_model is null)
+			{
+				Console.Write($"모델 로딩 실패:{filePath}");
+				return false;
+			}
+
+			string inspImagePath = _model.InspectImagePath;
+			if (File.Exists(inspImagePath))
+			{
+				Global.Inst.InspStage.SetImageBuffer(inspImagePath);
+			}
+
+			UpdateDiagramEntity();
+
+			return true;
+		}
+		public void SaveModel(string filePath)
+		{
+			Console.Write($"모델 저장:{filePath}");
+
+			//입력 경로가 없으면 현재 모델 저장
+			if (string.IsNullOrEmpty(filePath))
+				Global.Inst.InspStage.CurModel.Save();
+			else
+				Global.Inst.InspStage.CurModel.SaveAs(filePath);
+		}
 		#region Disposable
 
 		private bool disposed = false; // to detect redundant calls
