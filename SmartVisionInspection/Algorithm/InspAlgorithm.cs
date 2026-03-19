@@ -1,10 +1,11 @@
-﻿using SmartVisionInspection.Core;
-using OpenCvSharp;
-using System;
+﻿using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
+using System.Xml.Serialization;
+using OpenCvSharp;
+using SmartVisionInspection.Core;
 
 namespace SmartVisionInspection.Algorithm
 {
@@ -19,8 +20,11 @@ namespace SmartVisionInspection.Algorithm
 		InspAIModule,
 		InspCount
 	}
-
-    public abstract class InspAlgorithm
+	//#12_MODEL SAVE#7 Xml Serialize를 위해서, 아래 코드 추가
+	//XmlSerialize는 추상화된 상태를 알수 없어, 상속된 클래스를 명시적으로 포함해야 함.
+	[XmlInclude(typeof(MatchAlgorithm))]
+	[XmlInclude(typeof(BlobAlgorithm))]
+	public abstract class InspAlgorithm
     {
 		//알고리즘 타입 정의
 		public InspectType InspectType { get; set; } = InspectType.InspNone;

@@ -20,7 +20,9 @@ namespace SmartVisionInspection.Algorithm
 
     public class MatchAlgorithm : InspAlgorithm
     {
-        private List<Mat> _templateImages = new List<Mat>();
+		//#12_MODEL SAVE#8 Xml 이미지는 Serialize 하지 않도록 설정
+		[XmlIgnore]
+		private List<Mat> _templateImages = new List<Mat>();
 
         //찾을 이미지의 매칭율
         public int MatchScore { get; set; } = 60;
@@ -101,11 +103,24 @@ namespace SmartVisionInspection.Algorithm
 
             for (int i = 0; i < _templateImages.Count; i++)
             {
-                // 템플릿 매칭 수행
-                Cv2.MatchTemplate(image, _templateImages[i], result, TemplateMatchModes.CCoeffNormed);
+				// 템플릿 매칭 수행 (컬러 -> 모노)
+				//Cv2.MatchTemplate(image, _templateImages[i], result, TemplateMatchModes.CCoeffNormed);
+				Mat srcGray;
+				if (image.Channels() == 3)
+					srcGray = image.CvtColor(ColorConversionCodes.BGR2GRAY);
+				else
+					srcGray = image.Clone();
 
-                // 가장 높은 점수 위치 찾기
-                Cv2.MinMaxLoc(result, out _, out double value, out _, out Point loc);
+				Mat templGray;
+				if (_templateImages[i].Channels() == 3)
+					templGray = _templateImages[i].CvtColor(ColorConversionCodes.BGR2GRAY);
+				else
+					templGray = _templateImages[i].Clone();
+
+				Cv2.MatchTemplate(srcGray, templGray, result, TemplateMatchModes.CCoeffNormed);
+
+				// 가장 높은 점수 위치 찾기
+				Cv2.MinMaxLoc(result, out _, out double value, out _, out Point loc);
 
                 if (value > maxScore)
                 {
