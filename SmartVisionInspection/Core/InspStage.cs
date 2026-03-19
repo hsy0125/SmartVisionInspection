@@ -1,32 +1,48 @@
 ﻿using System;
 using System.Collections.Generic;
+using System.Data.SqlClient;
 using System.Drawing;
+using System.Linq;
+using System.Runtime.InteropServices;
+using System.Text;
 using System.Threading.Tasks;
-using OpenCvSharp;
-using OpenCvSharp.Extensions;
 using SmartVisionInspection.Algorithm;
 using SmartVisionInspection.Grab;
-using SmartVisionInspection.Inspect;
+using SmartVisionInspection.Setting;
 using SmartVisionInspection.Teach;
+using OpenCvSharp;
+using OpenCvSharp.Extensions;
+
+using SmartVisionInspection.Inspect;
+
 
 namespace SmartVisionInspection.Core
 {
+	/*
+    #6_INSP_STAGE# - <<<비전검사를 위한 클래스 구현>>> 
+    InspStage는 비전 검사 시스템의 핵심 클래스로, 
+    카메라 인터페이스와 이미지 처리 기능을 통합하여 검사 프로세스를 관리합니다.
+    1) ImageSpace 클래스 구현
+    2) InspStage 클래스 구현
+    3) Global 클래스 구현
+    4) RunForm 클래스 구현
+    */
+
+	//검사와 관련된 클래스를 관리하는 클래스
 	public class InspStage : IDisposable
 	{
-
 		public static readonly int MAX_GRAB_BUF = 5;
 
 		private ImageSpace _imageSpace = null;
+
+		//#5_CAMERA_INTERFACE#4 Dispose도 GrabModel에서 상속받아 사용
 		//private HikRobotCam _grabManager = null;
 		private GrabModel _grabManager = null;
 		private CameraType _camType = CameraType.WebCam;
-		// 영상용 
-		//private bool _isVideoMode = false;
 
 		SaigeAI _saigeAI; // SaigeAI 인스턴스
 
-		////#7_BINARY_PREVIEW#1 이진화 프리뷰에 필요한 변수 선언
-		BlobAlgorithm _blobAlgorithm = null; // Blob 알고리즘 인스턴스 ??
+		//#7_BINARY_PREVIEW#1 이진화 프리뷰에 필요한 변수 선언
 		private PreviewImage _previewImage = null;
 
 		//#10_INSPWINDOW#8 모델과 선택된 ROI 윈도우 변수 선언
@@ -34,15 +50,11 @@ namespace SmartVisionInspection.Core
 
 		private InspWindow _selectedInspWindow = null;
 
-
 		public InspStage() { }
 		public ImageSpace ImageSpace
 		{
 			get => _imageSpace;
 		}
-
-		//#8_LIVE#1 LIVE 모드 프로퍼티
-		public bool LiveMode { get; set; } = false;
 
 		public SaigeAI AIModule
 		{
@@ -54,29 +66,31 @@ namespace SmartVisionInspection.Core
 			}
 		}
 
-		//#7_BINARY_PREVIEW#2 이진화 알고리즘과 프리뷰 변수에 대한 프로퍼티 생성
-		public BlobAlgorithm BlobAlgorithm
-		{
-			get => _blobAlgorithm;
-		}
-
 		public PreviewImage PreView
 		{
 			get => _previewImage;
 		}
+
 		//#10_INSPWINDOW#9 현재 모델 프로퍼티 생성
 		public Model CurModel
 		{
 			get => _model;
 		}
 
+		//#8_LIVE#1 LIVE 모드 프로퍼티
+		public bool LiveMode { get; set; } = false;
+
+		public int SelBufferIndex { get; set; } = 0;
+		public eImageChannel SelImageChannel { get; set; } = eImageChannel.Gray;
+
+
 		public bool Initialize()
 		{
 			_imageSpace = new ImageSpace();
 
 			//#7_BINARY_PREVIEW#3 이진화 알고리즘과 프리뷰 변수 인스턴스 생성
-			_blobAlgorithm = new BlobAlgorithm();
 			_previewImage = new PreviewImage();
+
 			//#10_INSPWINDOW#10 모델 인스턴스 생성
 			_model = new Model();
 
@@ -105,6 +119,12 @@ namespace SmartVisionInspection.Core
 			return true;
 		}
 
+		private void LoadSetting()
+		{
+			//카메라 설정 타입 얻기
+			_camType = SettingXml.Inst.CamType;
+		}
+
 		public void InitModelGrab(int bufferCount)
 		{
 			if (_grabManager == null)
@@ -126,10 +146,57 @@ namespace SmartVisionInspection.Core
 			SetBuffer(bufferCount);
 
 			//_grabManager.SetExposureTime(25000);
-
-			//#7_BINARY_PREVIEW#9 이진화 알고리즘을 속성창에 연동하기 위한 함수 구현            
-			//UpdateProperty();
 		}
+
+		//#11_MATCHING#10 카메라 촬상 이미지와 파일 이미지 로딩시, 
+		//크기가 다를때, 이미지 버퍼를 다시 설정한 후, 이미지 로딩하는 함수
+		public void SetImageBuffer(string filePath)
+		{
+			Mat matImage = Cv2.ImRead(filePath);
+
+			int pixelBpp = 8;
+			int imageWidth;
+			int imageHeight;
+			int imageStride;
+
+			if (matImage.Type() == MatType.CV_8UC3)
+				pixelBpp = 24;
+
+			imageWidth = (matImage.Width + 3) / 4 * 4;
+			imageHeight = matImage.Height;
+
+			// 4바이트 정렬된 새로운 Mat 생성
+			Mat alignedMat = new Mat();
+			Cv2.CopyMakeBorder(matImage, alignedMat, 0, 0, 0, imageWidth - matImage.Width, BorderTypes.Constant, Scalar.Black);
+
+			imageStride = imageWidth * matImage.ElemSize();
+
+			if (_imageSpace != null)
+			{
+				if (_imageSpace.ImageSize.Width != imageWidth || _imageSpace.ImageSize.Height != imageHeight)
+				{
+					_imageSpace.SetImageInfo(pixelBpp, imageWidth, imageHeight, imageStride);
+					SetBuffer(_imageSpace.BufferCount);
+				}
+			}
+
+			int bufferIndex = 0;
+
+			// Mat의 데이터를 byte 배열로 복사
+			int bufSize = (int)(alignedMat.Total() * alignedMat.ElemSize());
+			Marshal.Copy(alignedMat.Data, ImageSpace.GetInspectionBuffer(bufferIndex), 0, bufSize);
+
+			_imageSpace.Split(bufferIndex);
+
+			DisplayGrabImage(bufferIndex);
+
+			if (_previewImage != null)
+			{
+				Bitmap bitmap = ImageSpace.GetBitmap(0);
+				_previewImage.SetImage(BitmapConverter.ToMat(bitmap));
+			}
+		}
+
 		//#10_INSPWINDOW#11 속성창 업데이트 기준을 알고리즘에서 InspWindow로 변경
 		private void UpdateProperty(InspWindow inspWindow)
 		{
@@ -142,26 +209,88 @@ namespace SmartVisionInspection.Core
 
 			propertiesForm.UpdateProperty(inspWindow);
 		}
-		public void SetBuffer(int bufferCount)
+
+		//#11_MATCHING#6 패턴매칭 속성창과 연동된 패턴 이미지 관리 함수
+		public void UpdateTeachingImage(int index)
 		{
-			if (_grabManager == null)
+			if (_selectedInspWindow is null)
 				return;
 
-			if (_imageSpace.BufferCount == bufferCount)
+			SetTeachingImage(_selectedInspWindow, index);
+		}
+
+		public void DelTeachingImage(int index)
+		{
+			if (_selectedInspWindow is null)
 				return;
 
-			_imageSpace.InitImageSpace(bufferCount);
-			_grabManager.InitBuffer(bufferCount);
+			InspWindow inspWindow = _selectedInspWindow;
 
-			for (int i = 0; i < bufferCount; i++)
+			inspWindow.DelWindowImage(index);
+
+			MatchAlgorithm matchAlgo = (MatchAlgorithm)inspWindow.FindInspAlgorithm(InspectType.InspMatch);
+			if (matchAlgo != null)
 			{
-				_grabManager.SetBuffer(
-					_imageSpace.GetInspectionBuffer(i),
-					_imageSpace.GetnspectionBufferPtr(i),
-					_imageSpace.GetInspectionBufferHandle(i),
-					i);
+				UpdateProperty(inspWindow);
 			}
 		}
+
+		public void SetTeachingImage(InspWindow inspWindow, int index = -1)
+		{
+			if (inspWindow is null)
+				return;
+
+			CameraForm cameraForm = MainForm.GetDockForm<CameraForm>();
+			if (cameraForm is null)
+				return;
+
+			Mat curImage = cameraForm.GetDisplayImage();
+			if (curImage is null)
+				return;
+
+			if (inspWindow.WindowArea.Right >= curImage.Width ||
+				inspWindow.WindowArea.Bottom >= curImage.Height)
+			{
+				Console.Write("ROI 영역이 잘못되었습니다!");
+				return;
+			}
+
+			Mat windowImage = curImage[inspWindow.WindowArea];
+
+			if (index < 0)
+				inspWindow.AddWindowImage(windowImage);
+			else
+				inspWindow.SetWindowImage(windowImage, index);
+
+			inspWindow.IsPatternLearn = false;
+
+			MatchAlgorithm matchAlgo = (MatchAlgorithm)inspWindow.FindInspAlgorithm(InspectType.InspMatch);
+			if (matchAlgo != null)
+			{
+				UpdateProperty(inspWindow);
+			}
+		}
+
+		//#11_MATCHING#11 버퍼 재설정시, 항상 설정 되도록 수정
+		public void SetBuffer(int bufferCount)
+		{
+			_imageSpace.InitImageSpace(bufferCount);
+
+			if (_grabManager != null)
+			{
+				_grabManager.InitBuffer(bufferCount);
+
+				for (int i = 0; i < bufferCount; i++)
+				{
+					_grabManager.SetBuffer(
+						_imageSpace.GetInspectionBuffer(i),
+						_imageSpace.GetnspectionBufferPtr(i),
+						_imageSpace.GetInspectionBufferHandle(i),
+						i);
+				}
+			}
+		}
+
 		//#10_INSPWINDOW#12 inspWindow에 대한 검사구현
 		public void TryInspection(InspWindow inspWindow = null)
 		{
@@ -181,6 +310,9 @@ namespace SmartVisionInspection.Core
 
 			foreach (var inspAlgo in inspWindow.AlgorithmList)
 			{
+				if (!inspAlgo.IsUse)
+					continue;
+
 				//검사 영역 초기화
 				inspAlgo.TeachRect = windowArea;
 				inspAlgo.InspRect = windowArea;
@@ -195,7 +327,6 @@ namespace SmartVisionInspection.Core
 
 							Mat srcImage = Global.Inst.InspStage.GetMat();
 							blobAlgo.SetInspData(srcImage);
-
 							break;
 						}
 				}
@@ -221,6 +352,7 @@ namespace SmartVisionInspection.Core
 				}
 			}
 		}
+
 		//#10_INSPWINDOW#13 ImageViewCtrl에서 ROI 생성,수정,이동,선택 등에 대한 함수
 		public void SelectInspWindow(InspWindow inspWindow)
 		{
@@ -239,7 +371,7 @@ namespace SmartVisionInspection.Core
 				propForm.ShowProperty(inspWindow);
 			}
 
-			UpdateProperty(inspWindow); //값을 채움
+			UpdateProperty(inspWindow);
 
 			Global.Inst.InspStage.PreView.SetInspWindow(inspWindow);
 		}
@@ -253,6 +385,9 @@ namespace SmartVisionInspection.Core
 
 			inspWindow.WindowArea = rect;
 			inspWindow.IsTeach = false;
+
+			//#11_MATCHING#7 새로운 ROI가 추가되면, 티칭 이미지 추가
+			SetTeachingImage(inspWindow);
 			UpdateProperty(inspWindow);
 			UpdateDiagramEntity();
 
@@ -285,6 +420,8 @@ namespace SmartVisionInspection.Core
 
 			return true;
 		}
+
+
 		//입력된 윈도우 이동
 		public void MoveInspWindow(InspWindow inspWindow, OpenCvSharp.Point offset)
 		{
@@ -294,6 +431,7 @@ namespace SmartVisionInspection.Core
 			inspWindow.OffsetMove(offset);
 			UpdateProperty(inspWindow);
 		}
+
 		//#MODEL#10 기존 ROI 수정되었을때, 그 정보를 InspWindow에 반영
 		public void ModifyInspWindow(InspWindow inspWindow, Rect rect)
 		{
@@ -305,67 +443,20 @@ namespace SmartVisionInspection.Core
 
 			UpdateProperty(inspWindow);
 		}
+
 		//#MODEL#11 InspWindow 삭제하기
-		public void DelInspWindow(InspWindow inspWindow)  //
+		public void DelInspWindow(InspWindow inspWindow)
 		{
 			_model.DelInspWindow(inspWindow);
 			UpdateDiagramEntity();
 		}
-		public void DelInspWindowList(List<InspWindow> inspWindowList)
+
+
+		public void DelInspWindow(List<InspWindow> inspWindowList)
 		{
 			_model.DelInspWindowList(inspWindowList);
 			UpdateDiagramEntity();
 		}
-
-		//private void UpdateProperty()
-		//{
-		//	if (BlobAlgorithm is null)
-		//		return;
-
-		//	PropertiesForm propertiesForm = MainForm.GetDockForm<PropertiesForm>();
-		//	if (propertiesForm is null)
-		//		return;
-
-		//	propertiesForm.UpdateProperty(BlobAlgorithm);
-		//}
-
-		//public void SetBuffer(int bufferCount)
-		//{
-		//	if (_grabManager == null)
-		//		return;
-
-		//	if (_imageSpace.BufferCount == bufferCount)
-		//		return;
-
-		//	_imageSpace.InitImageSpace(bufferCount);
-		//	_grabManager.InitBuffer(bufferCount);
-
-		//	for (int i = 0; i < bufferCount; i++)
-		//	{
-		//		_grabManager.SetBuffer(
-		//			_imageSpace.GetInspectionBuffer(i),
-		//			_imageSpace.GetnspectionBufferPtr(i),
-		//			_imageSpace.GetInspectionBufferHandle(i),
-		//			i);
-		//	}
-		//}
-
-		//#8_INSPECT_BINARY#19 이진화 검사 함수
-		//public void TryInspection()
-		//{
-		//	if (_blobAlgorithm is null)
-		//		return;
-
-		//	Mat srcImage = Global.Inst.InspStage.GetMat();
-		//	_blobAlgorithm.SetInspData(srcImage);
-
-		//	_blobAlgorithm.InspRect = new Rect(0, 0, srcImage.Width, srcImage.Height);
-
-		//	if (_blobAlgorithm.DoInspect())
-		//	{
-		//		DisplayResult();
-		//	}
-		//}
 
 		public void Grab(int bufferIndex)
 		{
@@ -375,27 +466,6 @@ namespace SmartVisionInspection.Core
 			_grabManager.Grab(bufferIndex, true);
 		}
 
-		//검사된 알고리즘이 가지고 있는 검사 결과 정보를 화면에 출력
-		private bool DisplayResult()
-		{
-			if (_blobAlgorithm is null)
-				return false;
-
-			List<DrawInspectInfo> resultArea = new List<DrawInspectInfo>();
-			int resultCnt = _blobAlgorithm.GetResultRect(out resultArea);
-			if (resultCnt > 0)
-			{
-				//찾은 위치를 이미지상에서 표시
-				var cameraForm = MainForm.GetDockForm<CameraForm>();
-				if (cameraForm != null)
-				{
-					cameraForm.ResetDisplay();
-					cameraForm.AddRect(resultArea);
-				}
-			}
-
-			return true;
-		}
 		//영상 취득 완료 이벤트 발생시 후처리
 		private async void _multiGrab_TransferCompleted(object sender, object e)
 		{
@@ -411,6 +481,7 @@ namespace SmartVisionInspection.Core
 				Bitmap bitmap = ImageSpace.GetBitmap(0);
 				_previewImage.SetImage(BitmapConverter.ToMat(bitmap));
 			}
+
 			//#8_LIVE#2 LIVE 모드일때, Grab을 계속 실행하여, 반복되도록 구현
 			//이 함수는 await를 사용하여 비동기적으로 실행되어, 함수를 async로 선언해야 합니다.
 			if (LiveMode)
@@ -438,18 +509,6 @@ namespace SmartVisionInspection.Core
 			}
 		}
 
-		public Bitmap GetCurrentImage()
-		{
-			Bitmap bitmap = null;
-			var cameraForm = MainForm.GetDockForm<CameraForm>();
-			if (cameraForm != null)
-			{
-				bitmap = cameraForm.GetDisplayImage();
-			}
-
-			return bitmap;
-		}
-
 		public Bitmap GetBitmap(int bufferIndex = -1)
 		{
 			if (Global.Inst.InspStage.ImageSpace is null)
@@ -459,10 +518,18 @@ namespace SmartVisionInspection.Core
 		}
 
 		//#7_BINARY_PREVIEW#4 이진화 프리뷰를 위해, ImageSpace에서 이미지 가져오기
-		public Mat GetMat()
+		public Mat GetMat(int bufferIndex = -1, eImageChannel imageChannel = eImageChannel.None)
 		{
-			return Global.Inst.InspStage.ImageSpace.GetMat();
+			if (bufferIndex >= 0)
+				SelBufferIndex = bufferIndex;
+
+			//#BINARY FILTER#14 채널 정보가 유지되도록, eImageChannel.None 타입을 추가
+			if (imageChannel != eImageChannel.None)
+				SelImageChannel = imageChannel;
+
+			return Global.Inst.InspStage.ImageSpace.GetMat(SelBufferIndex, SelImageChannel);
 		}
+
 		//#10_INSPWINDOW#14 변경된 모델 정보 갱신하여, ImageViewer와 모델트리에 반영
 		public void UpdateDiagramEntity()
 		{
@@ -524,8 +591,6 @@ namespace SmartVisionInspection.Core
 			Dispose(true);
 		}
 
-
 		#endregion //Disposable
 	}
-
 }

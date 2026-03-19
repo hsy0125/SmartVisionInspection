@@ -57,7 +57,7 @@ namespace SmartVisionInspection
 					Global.Inst.InspStage.DelInspWindow(e.InspWindow);
 					break;
 				case EntityActionType.DeleteList:
-					Global.Inst.InspStage.DelInspWindowList(e.InspWindowList);
+					Global.Inst.InspStage.DelInspWindow(e.InspWindowList);
 					break;
 			}
 		}
@@ -73,7 +73,10 @@ namespace SmartVisionInspection
 			Image bitmap = Image.FromFile(filePath);
 			imageViewer.LoadBitmap((Bitmap)bitmap);
 		}
-
+		public Mat GetDisplayImage()
+		{
+			return Global.Inst.InspStage.ImageSpace.GetMat();
+		}
 		private void CameraForm_Resize(object sender, EventArgs e)
 		{
 			int margin = 0;
@@ -87,6 +90,7 @@ namespace SmartVisionInspection
 			if (bitmap == null)
 			{
 				//#6_INSP_STAGE#3 업데이트시 bitmap이 없다면 InspSpace에서 가져온다
+				// imagespce 에서 맞는 이미지를 가져옴.
 				bitmap = Global.Inst.InspStage.GetBitmap(0);
 				if (bitmap == null)
 					return;
@@ -100,18 +104,19 @@ namespace SmartVisionInspection
 			Global.Inst.InspStage.PreView.SetImage(curImage);
 		}
 
-		public Bitmap GetDisplayImage()
-		{
-			Bitmap curImage = null;
+		//public Bitmap GetDisplayImage()
+		//{
+		//	Bitmap curImage = null;
 
-			if (imageViewer != null)
-				curImage = imageViewer.GetCurBitmap();
+		//	if (imageViewer != null)
+		//		curImage = imageViewer.GetCurBitmap();
 
-			return curImage;
-		}
+		//	return curImage;
+		//}
 
 		public void UpdateImageViewer()
 		{
+			imageViewer.UpdateInspParam();
 			imageViewer.Invalidate();
 		}
 		//#10_INSPWINDOW#23 모델 정보를 이용해, ROI 갱신
@@ -140,6 +145,7 @@ namespace SmartVisionInspection
 			}
 
 			imageViewer.SetDiagramEntityList(diagramEntityList);
+		
 		}
 		public void SelectDiagramEntity(InspWindow window)
 		{

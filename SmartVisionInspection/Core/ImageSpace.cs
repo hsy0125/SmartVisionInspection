@@ -14,12 +14,13 @@ namespace SmartVisionInspection.Core
 {
 	public enum eImageChannel : int
 	{
+		None = -1,
 		Color,
 		Gray,
 		Red,
 		Green,
 		Blue,
-		ChannelCount = 5,
+		ChannelCount,
 	}
 	public class ImageSpace : IDisposable
 	{
@@ -192,6 +193,9 @@ namespace SmartVisionInspection.Core
 				return;
 
 			Dispose();
+
+			_imageByChannel.Clear();
+			_imageInfo.Clear();
 
 			Func<int, ImageInfo> newImageInfo = (x) =>
 			{
