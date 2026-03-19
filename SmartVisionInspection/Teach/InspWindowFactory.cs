@@ -54,27 +54,33 @@ namespace SmartVisionInspection.Teach
             return inspWindow;
         }
 		//InspWindow가 생성된 후, InspWindowType에 따라 알고리즘을 추가하는 함수.
-        //현재는 모든 타입에 InspBinary 알고리즘을 추가하도록 구현되어 있지만, 향후 다른 알고리즘이 추가될 수 있도록 switch문으로 구현되어 있음.
+		//현재는 모든 타입에 InspBinary 알고리즘을 추가하도록 구현되어 있지만, 향후 다른 알고리즘이 추가될 수 있도록 switch문으로 구현되어 있음.
+		
+        //#11_MATCHING#4 각 ROI에 매칭 알고리즘 추가
 		private bool AddInspAlgorithm(InspWindow inspWindow)
-        {
-            switch (inspWindow.InspWindowType)
-            {
-                case InspWindowType.Base:
-                    inspWindow.AddInspAlgorithm(InspectType.InspBinary);
-                    break;
-                case InspWindowType.Body:
-                    inspWindow.AddInspAlgorithm(InspectType.InspBinary);
-                    break;
-                case InspWindowType.Sub:
-                    inspWindow.AddInspAlgorithm(InspectType.InspBinary);
-                    break;
-            }
+		{
+			switch (inspWindow.InspWindowType)
+			{
+				case InspWindowType.Base:
+					inspWindow.AddInspAlgorithm(InspectType.InspMatch);
+					inspWindow.AddInspAlgorithm(InspectType.InspBinary);
+					break;
+				case InspWindowType.Body:
+					inspWindow.AddInspAlgorithm(InspectType.InspMatch);
+					inspWindow.AddInspAlgorithm(InspectType.InspBinary);
+					break;
+				case InspWindowType.Sub:
+					inspWindow.AddInspAlgorithm(InspectType.InspMatch);
+					inspWindow.AddInspAlgorithm(InspectType.InspBinary);
+					break;
+			}
 
-            return true;
-        }
+			return true;
+		}
 
-        //타입을 입력하면, 해당 타입의 이름과 UID 이름 반환
-        private bool GetWindowName(InspWindowType windowType, out string name, out string prefix)
+
+		//타입을 입력하면, 해당 타입의 이름과 UID 이름 반환
+		private bool GetWindowName(InspWindowType windowType, out string name, out string prefix)
         {
             name = string.Empty;
             prefix = string.Empty;

@@ -14,6 +14,7 @@ namespace SmartVisionInspection.Algorithm
     {
 		InspNone = -1,
 		InspBinary,
+		InspMatch,
 		InspFilter,
 		InspAIModule,
 		InspCount
@@ -33,6 +34,7 @@ namespace SmartVisionInspection.Algorithm
 		public Rect TeachRect { get; set; }
 		public Rect InspRect { get; set; }
 
+		public eImageChannel ImageChannel { get; set; } = eImageChannel.Gray;
 		//검사할 원본 이미지
 		protected Mat _srcImage = null;
 

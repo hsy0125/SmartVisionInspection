@@ -89,6 +89,12 @@ namespace SmartVisionInspection
 					ImageFilterProp filterProp = new ImageFilterProp();
 					curProp = filterProp;
 					break;
+				//#11_MATCHING#5 패턴매칭 속성창 추가
+				case InspectType.InspMatch:
+					MatchInspProp matchProp = new MatchInspProp();
+					matchProp.PropertyChanged += PropertyChanged;
+					curProp = matchProp;
+					break;
 				case InspectType.InspAIModule:
 					AIModuleProp aiModuleProp = new AIModuleProp();
 					curProp = aiModuleProp;
@@ -119,21 +125,31 @@ namespace SmartVisionInspection
 			if (window is null)
 				return;
 
-			foreach (TabPage tabPage in tabPropControl.TabPages)
-			{
-				if (tabPage.Controls.Count > 0)
-				{
-					UserControl uc = tabPage.Controls[0] as UserControl;
+            foreach (TabPage tabPage in tabPropControl.TabPages)
+            {
+                if (tabPage.Controls.Count > 0)
+                {
+                    UserControl uc = tabPage.Controls[0] as UserControl;
 
-					if (uc is BinaryProp binaryProp)
-					{
-						BlobAlgorithm blobAlgo = (BlobAlgorithm)window.FindInspAlgorithm(InspectType.InspBinary);
-						if (blobAlgo is null)
-							continue;
+                    if (uc is BinaryProp binaryProp)
+                    {
+                        BlobAlgorithm blobAlgo = (BlobAlgorithm)window.FindInspAlgorithm(InspectType.InspBinary);
+                        if (blobAlgo is null)
+                            continue;
 
-						binaryProp.SetAlgorithm(blobAlgo);
-					}
-				}
+                        binaryProp.SetAlgorithm(blobAlgo);
+                    }
+                    else if (uc is MatchInspProp matchProp)
+                    {
+                        MatchAlgorithm matchAlgo = (MatchAlgorithm)window.FindInspAlgorithm(InspectType.InspMatch);
+                        if (matchAlgo is null)
+                            continue;
+
+                        window.PatternLearn();
+
+                        matchProp.SetAlgorithm(matchAlgo);
+                    }
+                }
 			}
 		}
 
