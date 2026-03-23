@@ -7,6 +7,7 @@ using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
 using System.Windows.Forms;
+using SmartVisionInspection.Util;
 
 namespace SmartVisionInspection.Setting
 {
@@ -32,6 +33,9 @@ namespace SmartVisionInspection.Setting
 
 			//환경설정 저장
 			SettingXml.Save();
+
+			SLogger.Write($"경로 설정 저장");
+
 		}
 
 		private void btnSelModelDir_Click(object sender, EventArgs e)

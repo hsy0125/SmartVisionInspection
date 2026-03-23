@@ -10,6 +10,7 @@ using System.Windows.Forms;
 using SmartVisionInspection.Core;
 using SmartVisionInspection.Setting;
 using SmartVisionInspection.Teach;
+using SmartVisionInspection.Util;
 using WeifenLuo.WinFormsUI.Docking;
 
 namespace SmartVisionInspection
@@ -62,6 +63,10 @@ namespace SmartVisionInspection
 			//속성창 추가
 			var propWindow = new PropertiesForm();
 			propWindow.Show(_dockPanel, DockState.DockRight);
+
+			//#14_LOGFORM#2 로그창 추가
+			var logWindow = new LogForm();
+			logWindow.Show(propWindow.Pane, DockAlignment.Bottom, 0.3);
 		}
 		public static T GetDockForm<T>() where T : DockContent
 		{
@@ -98,6 +103,7 @@ namespace SmartVisionInspection
 
 		private void setupToolStripMenuItem_Click(object sender, EventArgs e)
 		{
+			SLogger.Write($"환경설정창 열기");
 			SetupForm setupForm = new SetupForm();
 			setupForm.ShowDialog();
 		}

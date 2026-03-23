@@ -2,19 +2,19 @@
 using System.Collections.Generic;
 using System.Data.SqlClient;
 using System.Drawing;
+using System.IO;
 using System.Linq;
 using System.Runtime.InteropServices;
 using System.Text;
 using System.Threading.Tasks;
-using SmartVisionInspection.Algorithm;
-using SmartVisionInspection.Grab;
-using SmartVisionInspection.Setting;
-using SmartVisionInspection.Teach;
 using OpenCvSharp;
 using OpenCvSharp.Extensions;
-
+using SmartVisionInspection.Algorithm;
+using SmartVisionInspection.Grab;
 using SmartVisionInspection.Inspect;
-using System.IO;
+using SmartVisionInspection.Setting;
+using SmartVisionInspection.Teach;
+using SmartVisionInspection.Util;
 
 
 namespace SmartVisionInspection.Core
@@ -87,6 +87,7 @@ namespace SmartVisionInspection.Core
 
 		public bool Initialize()
 		{
+			SLogger.Write("InspStage 초기화!");
 			_imageSpace = new ImageSpace();
 
 			//#7_BINARY_PREVIEW#3 이진화 알고리즘과 프리뷰 변수 인스턴스 생성
@@ -153,6 +154,8 @@ namespace SmartVisionInspection.Core
 		//크기가 다를때, 이미지 버퍼를 다시 설정한 후, 이미지 로딩하는 함수
 		public void SetImageBuffer(string filePath)
 		{
+			SLogger.Write($"Load Image : {filePath}");
+
 			Mat matImage = Cv2.ImRead(filePath);
 
 			int pixelBpp = 8;
@@ -252,7 +255,7 @@ namespace SmartVisionInspection.Core
 			if (inspWindow.WindowArea.Right >= curImage.Width ||
 				inspWindow.WindowArea.Bottom >= curImage.Height)
 			{
-				Console.Write("ROI 영역이 잘못되었습니다!");
+				SLogger.Write("ROI 영역이 잘못되었습니다!");
 				return;
 			}
 
@@ -290,6 +293,8 @@ namespace SmartVisionInspection.Core
 						i);
 				}
 			}
+			SLogger.Write("버퍼 초기화 성공!");
+
 		}
 
 		//#10_INSPWINDOW#12 inspWindow에 대한 검사구현
@@ -500,7 +505,7 @@ namespace SmartVisionInspection.Core
 		private async void _multiGrab_TransferCompleted(object sender, object e)
 		{
 			int bufferIndex = (int)e;
-			Console.WriteLine($"_multiGrab_TransferCompleted {bufferIndex}");
+			SLogger.Write($"_multiGrab_TransferCompleted {bufferIndex}");
 
 			_imageSpace.Split(bufferIndex);
 
@@ -516,6 +521,7 @@ namespace SmartVisionInspection.Core
 			//이 함수는 await를 사용하여 비동기적으로 실행되어, 함수를 async로 선언해야 합니다.
 			if (LiveMode)
 			{
+				SLogger.Write("Grab");
 				await Task.Delay(100);  // 비동기 대기
 				_grabManager.Grab(bufferIndex, true);  // 다음 촬영 시작
 			}
@@ -588,13 +594,13 @@ namespace SmartVisionInspection.Core
 		//#12_MODEL SAVE#4 Mainform에서 호출되는 모델 열기와 저장 함수        
 		public bool LoadModel(string filePath)
 		{
-			Console.Write($"모델 로딩:{filePath}");
+			SLogger.Write($"모델 로딩:{filePath}");
 
 			_model = _model.Load(filePath);
 
 			if (_model is null)
 			{
-				Console.Write($"모델 로딩 실패:{filePath}");
+				SLogger.Write($"모델 로딩 실패:{filePath}");
 				return false;
 			}
 
@@ -610,7 +616,7 @@ namespace SmartVisionInspection.Core
 		}
 		public void SaveModel(string filePath)
 		{
-			Console.Write($"모델 저장:{filePath}");
+			SLogger.Write($"모델 저장:{filePath}");
 
 			//입력 경로가 없으면 현재 모델 저장
 			if (string.IsNullOrEmpty(filePath))
