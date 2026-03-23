@@ -8,6 +8,7 @@ using System.Text;
 using System.Threading.Tasks;
 using System.Windows.Forms;
 using SmartVisionInspection.Grab;
+using SmartVisionInspection.Util;
 
 namespace SmartVisionInspection.Setting
 {
@@ -47,7 +48,10 @@ namespace SmartVisionInspection.Setting
 			//환경설정에 카메라 타입 설정
 			SettingXml.Inst.CamType = (CameraType)cbCameraType.SelectedIndex;
 			//환경설정 저장
-			SettingXml.Save();
+			SettingXml.Save(); 
+			
+			SLogger.Write($"카메라 설정 저장");
+
 		}
 
 		private void btnApply_Click(object sender, EventArgs e)

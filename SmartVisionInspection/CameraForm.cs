@@ -1,9 +1,4 @@
-﻿using SmartVisionInspection.Algorithm;
-using SmartVisionInspection.Core;
-using SmartVisionInspection.Teach;
-using SmartVisionInspection.UIControl;
-using OpenCvSharp;
-using System;
+﻿using System;
 using System.Collections.Generic;
 using System.ComponentModel;
 using System.Data;
@@ -13,6 +8,12 @@ using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
 using System.Windows.Forms;
+using OpenCvSharp;
+using SmartVisionInspection.Algorithm;
+using SmartVisionInspection.Core;
+using SmartVisionInspection.Teach;
+using SmartVisionInspection.UIControl;
+using SmartVisionInspection.Util;
 using WeifenLuo.WinFormsUI.Docking;
 
 namespace SmartVisionInspection
@@ -31,6 +32,7 @@ namespace SmartVisionInspection
 		}
 		private void ImageViewer_DiagramEntityEvent(object sender, DiagramEntityEventArgs e)
 		{
+			SLogger.Write($"ImageViewer Action {e.ActionType.ToString()}");
 			switch (e.ActionType)
 			{
 				case EntityActionType.Select:

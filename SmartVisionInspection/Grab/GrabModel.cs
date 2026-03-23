@@ -6,6 +6,7 @@ using System.Runtime.InteropServices;
 using System.Text;
 using System.Threading.Tasks;
 using MvCameraControl;
+using SmartVisionInspection.Util;
 
 namespace SmartVisionInspection.Grab
 {
@@ -108,6 +109,8 @@ namespace SmartVisionInspection.Grab
 
 		internal bool InitGrab()
 		{
+			SLogger.Write("Grab 초기화 시작!");
+
 			if (!Create())
 				return false;
 
@@ -116,6 +119,7 @@ namespace SmartVisionInspection.Grab
 				if (!Reconnect())
 					return false;
 			}
+			SLogger.Write("Grab 초기화 성공!");
 
 			return true;
 		}
