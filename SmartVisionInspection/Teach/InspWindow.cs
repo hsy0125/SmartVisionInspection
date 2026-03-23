@@ -1,13 +1,14 @@
-﻿using SmartVisionInspection.Algorithm;
-using OpenCvSharp;
-using System;
+﻿using System;
 using System.Collections.Generic;
 using System.IO;
 using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
 using System.Xml.Serialization;
+using OpenCvSharp;
+using SmartVisionInspection.Algorithm;
 using SmartVisionInspection.Core;
+using SmartVisionInspection.Inspect;
 using SmartVisionInspection.Property;
 
 namespace SmartVisionInspection.Teach
@@ -36,6 +37,10 @@ namespace SmartVisionInspection.Teach
 		//#12_MODEL SAVE#5 Xml Serialize를 위해서, Element을 명확하게 알려줘야 함        
 		[XmlElement("InspAlgorithm")]
 		public List<InspAlgorithm> AlgorithmList { get; set; } = new List<InspAlgorithm>();
+
+		//#13_INSP_RESULT#1 검사 결과를 저장하기 위한 리스트
+		public List<InspResult> InspResultList { get; set; } = new List<InspResult>();
+
 		//#12_MODEL SAVE#6 Xml Serialize를 하지 않도록 설정
 		[XmlIgnore]
 		//#11_MATCHING#1 패턴매칭에 필요한 티칭 이미지 관리 기능
@@ -270,6 +275,21 @@ namespace SmartVisionInspection.Teach
 			}
 
 			return true;
+		}
+		//#13_INSP_RESULT#2 검사 결과를 초기화 및 추가 함수
+		public void ResetInspResult()
+		{
+			foreach (var algorithm in AlgorithmList)
+			{
+				algorithm.ResetResult();
+			}
+
+			InspResultList.Clear();
+		}
+
+		public void AddInspResult(InspResult inspResult)
+		{
+			InspResultList.Add(inspResult);
 		}
 	}
 }

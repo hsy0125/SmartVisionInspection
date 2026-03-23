@@ -163,10 +163,16 @@ namespace SmartVisionInspection
 		{
 			imageViewer.AddRect(rectInfos);
 		}
+
 		//#10_INSPWINDOW#24 새로운 ROI를 추가하는 함수
 		public void AddRoi(InspWindowType inspWindowType)
 		{
 			imageViewer.NewRoi(inspWindowType);
+		}
+		//#13_INSP_RESULT#6 검사 양불판정 갯수 설정 함수
+		public void SetInspResultCount(int totalArea, int okCnt, int ngCnt)
+		{
+			imageViewer.SetInspResultCount(new InspectResultCount(totalArea, okCnt, ngCnt));
 		}
 
 	}

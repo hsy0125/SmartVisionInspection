@@ -82,7 +82,7 @@ namespace SmartVisionInspection.Setting
 
 		public SettingXml() { }
 
-		public string MachineName { get; set; } = "Jidam";
+		public string MachineName { get; set; } = "SmartVisionInspection";
 
 		public string ModelDir { get; set; } = "";
 		public string ImageDir { get; set; } = "";
