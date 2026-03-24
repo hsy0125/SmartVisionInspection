@@ -117,7 +117,9 @@
     <Compile Include="Grab\GrabModel.cs" />
     <Compile Include="Grab\HikRobotCam.cs" />
     <Compile Include="Grab\WebCam.cs" />
+    <Compile Include="Inspect\InspectBoard.cs" />
     <Compile Include="Inspect\InspResult.cs" />
+    <Compile Include="Inspect\InspWorker.cs" />
     <Compile Include="Inspect\SaigeAI.cs" />
     <Compile Include="LogForm.cs">
       <SubType>Form</SubType>
@@ -210,12 +212,17 @@
     <Compile Include="Teach\InspWindow.cs" />
     <Compile Include="Teach\InspWindowFactory.cs" />
     <Compile Include="Teach\Model.cs" />
-    <Compile Include="TreeListView.cs" />
     <Compile Include="UIControl\ImageViewCtrl.cs">
       <SubType>UserControl</SubType>
     </Compile>
     <Compile Include="UIControl\ImageViewCtrl.Designer.cs">
       <DependentUpon>ImageViewCtrl.cs</DependentUpon>
+    </Compile>
+    <Compile Include="UIControl\MainViewToolBar.cs">
+      <SubType>UserControl</SubType>
+    </Compile>
+    <Compile Include="UIControl\MainViewToolBar.Designer.cs">
+      <DependentUpon>MainViewToolBar.cs</DependentUpon>
     </Compile>
     <Compile Include="UIControl\PatternImageEditor.cs">
       <SubType>UserControl</SubType>
@@ -230,6 +237,8 @@
       <DependentUpon>RangeTrackbar.cs</DependentUpon>
     </Compile>
     <Compile Include="Util\BitmapExtension.cs" />
+    <Compile Include="Util\ImageFileSorter.cs" />
+    <Compile Include="Util\ImageLoader.cs" />
     <Compile Include="Util\SLogger.cs" />
     <Compile Include="Util\XmlHelper.cs" />
     <EmbeddedResource Include="CameraForm.resx">
@@ -286,6 +295,9 @@
     </EmbeddedResource>
     <EmbeddedResource Include="UIControl\ImageViewCtrl.resx">
       <DependentUpon>ImageViewCtrl.cs</DependentUpon>
+    </EmbeddedResource>
+    <EmbeddedResource Include="UIControl\MainViewToolBar.resx">
+      <DependentUpon>MainViewToolBar.cs</DependentUpon>
     </EmbeddedResource>
     <EmbeddedResource Include="UIControl\PatternImageEditor.resx">
       <DependentUpon>PatternImageEditor.cs</DependentUpon>

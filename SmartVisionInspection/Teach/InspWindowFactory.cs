@@ -73,6 +73,10 @@ namespace SmartVisionInspection.Teach
 					inspWindow.AddInspAlgorithm(InspectType.InspMatch);
 					inspWindow.AddInspAlgorithm(InspectType.InspBinary);
 					break;
+				//#15_INSP_WORKER#4 InspWindowType.ID추가, 보정을 위해 패턴매칭만 추가
+				case InspWindowType.ID:
+					inspWindow.AddInspAlgorithm(InspectType.InspMatch);
+					break;
 			}
 
 			return true;
