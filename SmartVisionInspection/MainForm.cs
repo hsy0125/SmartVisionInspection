@@ -7,6 +7,7 @@ using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
 using System.Windows.Forms;
+using SmartVisionInspection;
 using SmartVisionInspection.Core;
 using SmartVisionInspection.Setting;
 using SmartVisionInspection.Teach;
@@ -15,19 +16,40 @@ using WeifenLuo.WinFormsUI.Docking;
 
 namespace SmartVisionInspection
 {
+	/*
+    #2_DOCKPANEL# - <<<MainForm에 연동할 Form 도킹>>> 
+    도킹에 필요한 참조를 추가하고, MainForm에 Form을 도킹
+    1) ..\ExternalLib\Dll\Docking\WeifenLuo.WinFormsUI.Docking.dll 참조 추가
+    2) ..\ExternalLib\Dll\Docking\WeifenLuo.WinFormsUI.Docking.ThemeVS2015.dll 참조 추가
+    */
+
+	/*
+    #3_CAMERAVIEW_PROPERTY# - <<<카메라뷰와 속성창 기본 구현>>> 
+    카메라뷰에 Pane과 PictureBox를 추가하고, 이미지 로딩 기능 구현
+    UserControl과 TabControl을 이용해 속성창 구현
+    1) CameraForm에 PictureBox와 Pane 추가
+    2) 풀다운 메뉴에 ImageOpen 메뉴 추가
+    3) #3_CAMERAVIEW_PROPERTY#1 ~ 2 이미지 로딩 기능 구현
+    4) Property 폴더를 솔루션탐색기에 추가
+    5) PropertiesForm에 ImageFilterProp UserControl과 BinaryProp UserControl 추가
+    6) PropertiesForm에 TabControl 추가
+    3) #3_CAMERAVIEW_PROPERTY#3 ~ 탭 콘트롤 연동 기능 구현
+    */
 
 	public partial class MainForm : Form
 	{
+		//#2_DOCKPANEL#1 DockPanel을 전역으로 선언
 		private static DockPanel _dockPanel;
+
 		public MainForm()
 		{
 			InitializeComponent();
 
-			_dockPanel = new DockPanel()
+			//#2_DOCKPANEL#2 DockPanel 초기화
+			_dockPanel = new DockPanel
 			{
 				Dock = DockStyle.Fill
-			}
-			;
+			};
 			Controls.Add(_dockPanel);
 
 			// Visual Studio 2015 테마 적용
@@ -38,7 +60,12 @@ namespace SmartVisionInspection
 
 			//#6_INSP_STAGE#1 전역 인스턴스 초기화
 			Global.Inst.Initialize();
+
+			//#15_INSP_WORKER#2 연속 검사 모드 설정값 로딩
+			LoadSetting();
 		}
+
+		//#2_DOCKPANEL#5 도킹 윈도우를 로드하는 메서드
 		private void LoadDockingWindows()
 		{
 			//도킹해제 금지 설정
@@ -68,11 +95,20 @@ namespace SmartVisionInspection
 			var logWindow = new LogForm();
 			logWindow.Show(propWindow.Pane, DockAlignment.Bottom, 0.3);
 		}
+		private void LoadSetting()
+		{
+			cycleModeMenuItem.Checked = SettingXml.Inst.CycleMode;
+		}
+
+		//#2_DOCKPANEL#6 쉽게 도킹패널에 접근하기 위한 정적 함수
+		//제네릭 함수 사용를 이용해 입력된 타입의 폼 객체 얻기
 		public static T GetDockForm<T>() where T : DockContent
 		{
 			var findForm = _dockPanel.Contents.OfType<T>().FirstOrDefault();
 			return findForm;
 		}
+
+		//#3_CAMERAVIEW_PROPERTY#2 풀다운 메뉴에서 이미지 열기 기능 구현
 		private void imageOpenToolStripMenuItem_Click(object sender, EventArgs e)
 		{
 			CameraForm cameraForm = GetDockForm<CameraForm>();
@@ -86,14 +122,20 @@ namespace SmartVisionInspection
 				openFileDialog.Multiselect = false;
 				if (openFileDialog.ShowDialog() == DialogResult.OK)
 				{
+					//#13_SET_IMAGE_BUFFER#2 이미지에 맞게 버퍼를 먼저 설정하도록 변경
 					string filePath = openFileDialog.FileName;
-
-
-					//#11_MATCHING#12 이미지 로딩함수 변경
 					Global.Inst.InspStage.SetImageBuffer(filePath);
 					Global.Inst.InspStage.CurModel.InspectImagePath = filePath;
 				}
 			}
+		}
+
+		//#9_SETUP#1 환경설정창 실행
+		private void SetupMenuItem_Click(object sender, EventArgs e)
+		{
+			SLogger.Write($"환경설정창 열기");
+			SetupForm setupForm = new SetupForm();
+			setupForm.ShowDialog();
 		}
 
 		private void MainForm_FormClosing(object sender, FormClosingEventArgs e)
@@ -101,12 +143,6 @@ namespace SmartVisionInspection
 			Global.Inst.Dispose();
 		}
 
-		private void setupToolStripMenuItem_Click(object sender, EventArgs e)
-		{
-			SLogger.Write($"환경설정창 열기");
-			SetupForm setupForm = new SetupForm();
-			setupForm.ShowDialog();
-		}
 		//#12_MODEL SAVE#3 모델 파일 열기,저장, 다른 이름으로 저장 기능 구현
 		private string GetMdoelTitle(Model curModel)
 		{
@@ -117,7 +153,7 @@ namespace SmartVisionInspection
 			return $"{Define.PROGRAM_NAME} - MODEL : {modelName}";
 		}
 
-		private void modelNEwToolStripMenuItem_Click(object sender, EventArgs e)
+		private void modelNewMenuItem_Click(object sender, EventArgs e)
 		{
 			//신규 모델 추가를 위한 모델 정보를 받기 위한 창 띄우기
 			NewModel newModel = new NewModel();
@@ -130,7 +166,7 @@ namespace SmartVisionInspection
 			}
 		}
 
-		private void modelOpenToolStripMenuItem_Click(object sender, EventArgs e)
+		private void modelOpenMenuItem_Click(object sender, EventArgs e)
 		{
 			//모델 파일 열기
 			using (OpenFileDialog openFileDialog = new OpenFileDialog())
@@ -154,13 +190,13 @@ namespace SmartVisionInspection
 			}
 		}
 
-		private void modelSaveToolStripMenuItem_Click(object sender, EventArgs e)
+		private void modelSaveMenuItem_Click(object sender, EventArgs e)
 		{
 			//모델 파일 저장
 			Global.Inst.InspStage.SaveModel("");
 		}
 
-		private void modelSaveAsToolStripMenuItem_Click(object sender, EventArgs e)
+		private void modelSaveAsMenuItem_Click(object sender, EventArgs e)
 		{
 			//다른이름으로 모델 파일 저장
 			using (SaveFileDialog saveFileDialog = new SaveFileDialog())
@@ -177,6 +213,13 @@ namespace SmartVisionInspection
 				}
 			}
 		}
+
+		//#15_INSP_WORKER#3 Cycle 모드 설정
+		private void cycleModeMenuItem_Click(object sender, EventArgs e)
+		{
+			// 현재 체크 상태 확인
+			bool isChecked = cycleModeMenuItem.Checked;
+			SettingXml.Inst.CycleMode = isChecked;
+		}
 	}
-	
 }

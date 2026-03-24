@@ -7,14 +7,16 @@ using System.Linq;
 using System.Runtime.InteropServices;
 using System.Text;
 using System.Threading.Tasks;
-using OpenCvSharp;
-using OpenCvSharp.Extensions;
+using System.Windows.Forms;
 using SmartVisionInspection.Algorithm;
 using SmartVisionInspection.Grab;
 using SmartVisionInspection.Inspect;
 using SmartVisionInspection.Setting;
 using SmartVisionInspection.Teach;
 using SmartVisionInspection.Util;
+using Microsoft.Win32;
+using OpenCvSharp;
+using OpenCvSharp.Extensions;
 
 
 namespace SmartVisionInspection.Core
@@ -29,10 +31,18 @@ namespace SmartVisionInspection.Core
     4) RunForm 클래스 구현
     */
 
+	/*
+    #16_LAST_MODELOPEN# - <<<마지막에 사용한 모델 파일 자동 로딩>>>     
+    */
+
+	/*
+    #17_WORKING_STATE# - <<<현재 운영 상태를 화면에 표시>>>     
+    */
+
 	//검사와 관련된 클래스를 관리하는 클래스
 	public class InspStage : IDisposable
 	{
-		public static readonly int MAX_GRAB_BUF = 5;
+		public static readonly int MAX_GRAB_BUF = 1;
 
 		private ImageSpace _imageSpace = null;
 
@@ -50,6 +60,24 @@ namespace SmartVisionInspection.Core
 		private Model _model = null;
 
 		private InspWindow _selectedInspWindow = null;
+
+
+		//#15_INSP_WORKER#5 InspWorker 클래스 선언
+		private InspWorker _inspWorker = null;
+		private ImageLoader _imageLoader = null;
+
+		//#16_LAST_MODELOPEN#1 가장 최근 모델 파일 경로와 저장할 REGISTRY 키 변수 선언
+
+		// 레지스트리 키 생성 또는 열기
+		RegistryKey _regKey = null;
+
+		//가장 최근 모델 파일 경로를 저장하는 변수
+		private bool _lastestModelOpen = false;
+
+		public bool UseCamera { get; set; } = false;
+
+		private string _lotNumber;
+		private string _serialID;
 
 		public InspStage() { }
 		public ImageSpace ImageSpace
@@ -72,6 +100,12 @@ namespace SmartVisionInspection.Core
 			get => _previewImage;
 		}
 
+		//#15_INSP_WORKER#6 InspWorker 프로퍼티
+		public InspWorker InspWorker
+		{
+			get => _inspWorker;
+		}
+
 		//#10_INSPWINDOW#9 현재 모델 프로퍼티 생성
 		public Model CurModel
 		{
@@ -92,6 +126,13 @@ namespace SmartVisionInspection.Core
 
 			//#7_BINARY_PREVIEW#3 이진화 알고리즘과 프리뷰 변수 인스턴스 생성
 			_previewImage = new PreviewImage();
+
+			//#15_INSP_WORKER#7 InspWorker 인스턴스 생성
+			_inspWorker = new InspWorker();
+			_imageLoader = new ImageLoader();
+
+			//#16_LAST_MODELOPEN#2 REGISTRY 키 생성
+			_regKey = Registry.CurrentUser.CreateSubKey("Software\\SmartVisionInspection");
 
 			//#10_INSPWINDOW#10 모델 인스턴스 생성
 			_model = new Model();
@@ -116,6 +157,12 @@ namespace SmartVisionInspection.Core
 				_grabManager.TransferCompleted += _multiGrab_TransferCompleted;
 
 				InitModelGrab(MAX_GRAB_BUF);
+			}
+
+			//#16_LAST_MODELOPEN#5 마지막 모델 열기 여부 확인
+			if (!LastestModelOpen())
+			{
+				MessageBox.Show("모델 열기 실패!");
 			}
 
 			return true;
@@ -147,11 +194,20 @@ namespace SmartVisionInspection.Core
 
 			SetBuffer(bufferCount);
 
+			//#18_IMAGE_CHANNEL#7 카메라 칼라 여부에 따라, 기본 채널 설정
+			eImageChannel imageChannel = (pixelBpp == 24) ? eImageChannel.Color : eImageChannel.Gray;
+			SetImageChannel(imageChannel);
+
 			//_grabManager.SetExposureTime(25000);
 		}
 
-		//#11_MATCHING#10 카메라 촬상 이미지와 파일 이미지 로딩시, 
-		//크기가 다를때, 이미지 버퍼를 다시 설정한 후, 이미지 로딩하는 함수
+		/*
+        #13_SET_IMAGE_BUFFER# - <<<이미지 크기에 맞는 버퍼 설정>>> 
+        이미지 파일을 열거나, 카메라를 사용할 때, 다른 해상도일 때 버퍼 처리
+        1) SetImageBuffer(string filePath) 구현
+        2) CheckImageBuffer() 구현
+        3) #13_SET_IMAGE_BUFFER#1 ~ 4 구현
+        */
 		public void SetImageBuffer(string filePath)
 		{
 			SLogger.Write($"Load Image : {filePath}");
@@ -193,13 +249,28 @@ namespace SmartVisionInspection.Core
 			_imageSpace.Split(bufferIndex);
 
 			DisplayGrabImage(bufferIndex);
+		}
 
-			if (_previewImage != null)
+		public void CheckImageBuffer()
+		{
+			if (_grabManager != null && SettingXml.Inst.CamType != CameraType.None)
 			{
-				Bitmap bitmap = ImageSpace.GetBitmap(0);
-				_previewImage.SetImage(BitmapConverter.ToMat(bitmap));
+				int imageWidth;
+				int imageHeight;
+				int imageStride;
+				_grabManager.GetResolution(out imageWidth, out imageHeight, out imageStride);
+
+				if (_imageSpace.ImageSize.Width != imageWidth || _imageSpace.ImageSize.Height != imageHeight)
+				{
+					int pixelBpp = 8;
+					_grabManager.GetPixelBpp(out pixelBpp);
+
+					_imageSpace.SetImageInfo(pixelBpp, imageWidth, imageHeight, imageStride);
+					SetBuffer(_imageSpace.BufferCount);
+				}
 			}
 		}
+
 
 		//#10_INSPWINDOW#11 속성창 업데이트 기준을 알고리즘에서 InspWindow로 변경
 		private void UpdateProperty(InspWindow inspWindow)
@@ -271,11 +342,16 @@ namespace SmartVisionInspection.Core
 			MatchAlgorithm matchAlgo = (MatchAlgorithm)inspWindow.FindInspAlgorithm(InspectType.InspMatch);
 			if (matchAlgo != null)
 			{
+				//#18_IMAGE_CHANNEL#8 패턴매칭 이미지 채널 설정, 칼라인 경우 그레이로 변경
+				matchAlgo.ImageChannel = SelImageChannel;
+				if (matchAlgo.ImageChannel == eImageChannel.Color)
+					matchAlgo.ImageChannel = eImageChannel.Gray;
+
 				UpdateProperty(inspWindow);
 			}
 		}
 
-		//#11_MATCHING#11 버퍼 재설정시, 항상 설정 되도록 수정
+		//#13_SET_IMAGE_BUFFER#1 InitImageSpace를 먼저 실행하도록 수정
 		public void SetBuffer(int bufferCount)
 		{
 			_imageSpace.InitImageSpace(bufferCount);
@@ -293,101 +369,17 @@ namespace SmartVisionInspection.Core
 						i);
 				}
 			}
+
 			SLogger.Write("버퍼 초기화 성공!");
-
 		}
 
-		//#10_INSPWINDOW#12 inspWindow에 대한 검사구현
-		//#13_INSP_RESULT#8 검사 결과를 출력하기 위해, 코드 수정
-		public void TryInspection(InspWindow inspWindow = null)
+		//#15_INSP_WORKER#8 TryInspection를 InspWorker로 이동
+		public void TryInspection(InspWindow inspWindow)
 		{
-			if (inspWindow is null)
-			{
-				if (_selectedInspWindow is null)
-					return;
-
-				inspWindow = _selectedInspWindow;
-			}
-
 			UpdateDiagramEntity();
-
-			inspWindow.ResetInspResult();
-
-			List<DrawInspectInfo> totalArea = new List<DrawInspectInfo>();
-
-			Rect windowArea = inspWindow.WindowArea;
-
-			foreach (var inspAlgo in inspWindow.AlgorithmList)
-			{
-				if (!inspAlgo.IsUse)
-					continue;
-
-				//검사 영역 초기화
-				inspAlgo.TeachRect = windowArea;
-				inspAlgo.InspRect = windowArea;
-
-				Mat srcImage = Global.Inst.InspStage.GetMat();
-				inspAlgo.SetInspData(srcImage);
-
-				if (!inspAlgo.DoInspect())
-					continue;
-
-				List<DrawInspectInfo> resultArea = new List<DrawInspectInfo>();
-				int resultCnt = inspAlgo.GetResultRect(out resultArea);
-				if (resultCnt > 0)
-				{
-					totalArea.AddRange(resultArea);
-				}
-
-				InspectType inspType = inspAlgo.InspectType;
-
-				string resultInfo = string.Join("\r\n", inspAlgo.ResultString);
-
-				InspResult inspResult = new InspResult
-				{
-					ObjectID = inspWindow.UID,
-					InspType = inspAlgo.InspectType,
-					IsDefect = inspAlgo.IsDefect,
-					ResultInfos = resultInfo
-				};
-
-				switch (inspType)
-				{
-					case InspectType.InspMatch:
-						{
-							MatchAlgorithm matchAlgo = inspAlgo as MatchAlgorithm;
-							inspResult.ResultValue = $"{matchAlgo.OutScore}";
-							break;
-						}
-					case InspectType.InspBinary:
-						{
-							BlobAlgorithm blobAlgo = (BlobAlgorithm)inspAlgo;
-							int min = blobAlgo.BlobFilters[blobAlgo.FILTER_COUNT].min;
-							int max = blobAlgo.BlobFilters[blobAlgo.FILTER_COUNT].max;
-							inspResult.ResultValue = $"{blobAlgo.OutBlobCount}/{min}~{max}";
-							break;
-						}
-				}
-
-				inspWindow.AddInspResult(inspResult);
-			}
-
-			if (totalArea.Count > 0)
-			{
-				//찾은 위치를 이미지상에서 표시
-				var cameraForm = MainForm.GetDockForm<CameraForm>();
-				if (cameraForm != null)
-				{
-					cameraForm.AddRect(totalArea);
-				}
-			}
-
-			ResultForm resultForm = MainForm.GetDockForm<ResultForm>();
-			if (resultForm != null)
-			{
-				resultForm.AddWindowResult(inspWindow);
-			}
+			InspWorker.TryInspect(inspWindow, InspectType.InspNone);
 		}
+
 		//#10_INSPWINDOW#13 ImageViewCtrl에서 ROI 생성,수정,이동,선택 등에 대한 함수
 		public void SelectInspWindow(InspWindow inspWindow)
 		{
@@ -493,29 +485,27 @@ namespace SmartVisionInspection.Core
 			UpdateDiagramEntity();
 		}
 
-		public void Grab(int bufferIndex)
+		public bool Grab(int bufferIndex)
 		{
 			if (_grabManager == null)
-				return;
+				return false;
 
-			_grabManager.Grab(bufferIndex, true);
+			if (!_grabManager.Grab(bufferIndex, true))
+				return false;
+
+			return true;
 		}
+
 
 		//영상 취득 완료 이벤트 발생시 후처리
 		private async void _multiGrab_TransferCompleted(object sender, object e)
 		{
 			int bufferIndex = (int)e;
-			SLogger.Write($"_multiGrab_TransferCompleted {bufferIndex}");
+			SLogger.Write($"TransferCompleted {bufferIndex}");
 
 			_imageSpace.Split(bufferIndex);
 
 			DisplayGrabImage(bufferIndex);
-
-			if (_previewImage != null)
-			{
-				Bitmap bitmap = ImageSpace.GetBitmap(0);
-				_previewImage.SetImage(BitmapConverter.ToMat(bitmap));
-			}
 
 			//#8_LIVE#2 LIVE 모드일때, Grab을 계속 실행하여, 반복되도록 구현
 			//이 함수는 await를 사용하여 비동기적으로 실행되어, 함수를 async로 선언해야 합니다.
@@ -545,12 +535,42 @@ namespace SmartVisionInspection.Core
 			}
 		}
 
-		public Bitmap GetBitmap(int bufferIndex = -1)
+		//#18_IMAGE_CHANNEL#6 프리뷰 이미지 채널을 설정하는 함수
+		public void SetPreviewImage(eImageChannel channel)
 		{
+			if (_previewImage is null)
+				return;
+
+			Bitmap bitmap = ImageSpace.GetBitmap(0, channel);
+			_previewImage.SetImage(BitmapConverter.ToMat(bitmap));
+
+			SetImageChannel(channel);
+		}
+
+		//#18_IMAGE_CHANNEL#5 이미지 채널을 설정하는 함수
+		public void SetImageChannel(eImageChannel channel)
+		{
+			var cameraForm = MainForm.GetDockForm<CameraForm>();
+			if (cameraForm != null)
+			{
+				cameraForm.SetImageChannel(channel);
+			}
+		}
+
+		//비트맵 이미지 요청시, 이미지 채널이 있다면 SelImageChangel에 설정
+		public Bitmap GetBitmap(int bufferIndex = -1, eImageChannel imageChannel = eImageChannel.None)
+		{
+			if (bufferIndex >= 0)
+				SelBufferIndex = bufferIndex;
+
+			//#BINARY FILTER#13 채널 정보가 유지되도록, eImageChannel.None 타입을 추가
+			if (imageChannel != eImageChannel.None)
+				SelImageChannel = imageChannel;
+
 			if (Global.Inst.InspStage.ImageSpace is null)
 				return null;
 
-			return Global.Inst.InspStage.ImageSpace.GetBitmap();
+			return Global.Inst.InspStage.ImageSpace.GetBitmap(SelBufferIndex, SelImageChannel);
 		}
 
 		//#7_BINARY_PREVIEW#4 이진화 프리뷰를 위해, ImageSpace에서 이미지 가져오기
@@ -559,11 +579,7 @@ namespace SmartVisionInspection.Core
 			if (bufferIndex >= 0)
 				SelBufferIndex = bufferIndex;
 
-			//#BINARY FILTER#14 채널 정보가 유지되도록, eImageChannel.None 타입을 추가
-			if (imageChannel != eImageChannel.None)
-				SelImageChannel = imageChannel;
-
-			return Global.Inst.InspStage.ImageSpace.GetMat(SelBufferIndex, SelImageChannel);
+			return Global.Inst.InspStage.ImageSpace.GetMat(SelBufferIndex, imageChannel);
 		}
 
 		//#10_INSPWINDOW#14 변경된 모델 정보 갱신하여, ImageViewer와 모델트리에 반영
@@ -591,6 +607,15 @@ namespace SmartVisionInspection.Core
 				cameraForm.UpdateImageViewer();
 			}
 		}
+		public void ResetDisplay()
+		{
+			CameraForm cameraForm = MainForm.GetDockForm<CameraForm>();
+			if (cameraForm != null)
+			{
+				cameraForm.ResetDisplay();
+			}
+		}
+
 		//#12_MODEL SAVE#4 Mainform에서 호출되는 모델 열기와 저장 함수        
 		public bool LoadModel(string filePath)
 		{
@@ -612,8 +637,12 @@ namespace SmartVisionInspection.Core
 
 			UpdateDiagramEntity();
 
+			//#16_LAST_MODELOPEN#3 마지막 저장 모델 경로를 레지스트리에 저장
+			_regKey.SetValue("LastestModelPath", filePath);
+
 			return true;
 		}
+
 		public void SaveModel(string filePath)
 		{
 			SLogger.Write($"모델 저장:{filePath}");
@@ -624,6 +653,146 @@ namespace SmartVisionInspection.Core
 			else
 				Global.Inst.InspStage.CurModel.SaveAs(filePath);
 		}
+
+		private bool LastestModelOpen()
+		{
+			if (_lastestModelOpen)
+				return true;
+
+			_lastestModelOpen = true;
+
+			string lastestModel = (string)_regKey.GetValue("LastestModelPath");
+			if (File.Exists(lastestModel) == false)
+				return true;
+
+			DialogResult result = MessageBox.Show($"최근 모델을 로딩할까요?\r\n{lastestModel}", "Question", MessageBoxButtons.YesNo);
+			if (result == DialogResult.No)
+				return true;
+
+			return LoadModel(lastestModel);
+		}
+
+		//#15_INSP_WORKER#9 자동 연속 검사 함수
+		public void CycleInspect(bool isCycle)
+		{
+			if (InspWorker.IsRunning)
+				return;
+
+			if (!UseCamera)
+			{
+				string inspImagePath = CurModel.InspectImagePath;
+				if (inspImagePath == "")
+					return;
+
+				string inspImageDir = Path.GetDirectoryName(inspImagePath);
+				if (!Directory.Exists(inspImageDir))
+					return;
+
+				if (!_imageLoader.IsLoadedImages())
+					_imageLoader.LoadImages(inspImageDir);
+			}
+
+			if (isCycle)
+				_inspWorker.StartCycleInspectImage();
+			else
+				OneCycle();
+		}
+
+		public bool OneCycle()
+		{
+			if (UseCamera)
+			{
+				if (!Grab(0))
+					return false;
+			}
+			else
+			{
+				if (!VirtualGrab())
+					return false;
+			}
+
+			ResetDisplay();
+
+			bool isDefect;
+			if (!_inspWorker.RunInspect(out isDefect))
+				return false;
+
+			return true;
+		}
+
+		public void StopCycle()
+		{
+			if (_inspWorker != null)
+				_inspWorker.Stop();
+
+			SetWorkingState(WorkingState.NONE);
+		}
+
+		public bool VirtualGrab()
+		{
+			if (_imageLoader is null)
+				return false;
+
+			string imagePath = _imageLoader.GetNextImagePath();
+			if (imagePath == "")
+				return false;
+
+			Global.Inst.InspStage.SetImageBuffer(imagePath);
+
+			_imageSpace.Split(0);
+
+			DisplayGrabImage(0);
+
+			return true;
+		}
+
+		//검사를 위한 준비 작업
+		public bool InspectReady(string lotNumber, string serialID)
+		{
+			_lotNumber = lotNumber;
+			_serialID = serialID;
+
+			LiveMode = false;
+			UseCamera = SettingXml.Inst.CamType != CameraType.None ? true : false;
+
+			Global.Inst.InspStage.CheckImageBuffer();
+
+			ResetDisplay();
+
+			return true;
+		}
+
+		public bool StartAutoRun()
+		{
+			SLogger.Write("Action : StartAutoRun");
+
+			string modelPath = CurModel.ModelPath;
+			if (modelPath == "")
+			{
+				SLogger.Write("열려진 모델이 없습니다!", SLogger.LogType.Error);
+				MessageBox.Show("열려진 모델이 없습니다!");
+				return false;
+			}
+
+			LiveMode = false;
+			UseCamera = SettingXml.Inst.CamType != CameraType.None ? true : false;
+
+			SetWorkingState(WorkingState.INSPECT);
+
+			return true;
+		}
+
+		//#17_WORKING_STATE#2 작업 상태 설정
+		public void SetWorkingState(WorkingState workingState)
+		{
+			var cameraForm = MainForm.GetDockForm<CameraForm>();
+			if (cameraForm != null)
+			{
+				cameraForm.SetWorkingState(workingState);
+			}
+		}
+
+
 		#region Disposable
 
 		private bool disposed = false; // to detect redundant calls
@@ -645,6 +814,9 @@ namespace SmartVisionInspection.Core
 						_grabManager.Dispose();
 						_grabManager = null;
 					}
+
+					//#16_LAST_MODELOPEN#4 registry 키를 닫습니다.
+					_regKey.Close();
 				}
 
 				// Dispose unmanaged managed resources.

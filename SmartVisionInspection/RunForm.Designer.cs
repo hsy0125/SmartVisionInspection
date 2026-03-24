@@ -34,6 +34,7 @@
 			this.btnLive = new System.Windows.Forms.Button();
 			this.btnStart = new System.Windows.Forms.Button();
 			this.runImageList = new System.Windows.Forms.ImageList(this.components);
+			this.btnStop = new System.Windows.Forms.Button();
 			this.SuspendLayout();
 			// 
 			// btnGrab
@@ -82,12 +83,27 @@
 			this.runImageList.Images.SetKeyName(0, "camera_color.png");
 			this.runImageList.Images.SetKeyName(1, "live-64.png");
 			this.runImageList.Images.SetKeyName(2, "start-64.png");
+			this.runImageList.Images.SetKeyName(3, "stop-64.png");
+			// 
+			// btnStop
+			// 
+			this.btnStop.ImageIndex = 3;
+			this.btnStop.ImageList = this.runImageList;
+			this.btnStop.Location = new System.Drawing.Point(612, 17);
+			this.btnStop.Margin = new System.Windows.Forms.Padding(4);
+			this.btnStop.Name = "btnStop";
+			this.btnStop.Size = new System.Drawing.Size(173, 129);
+			this.btnStop.TabIndex = 4;
+			this.btnStop.Text = "검사";
+			this.btnStop.UseVisualStyleBackColor = true;
+			this.btnStop.Click += new System.EventHandler(this.btnStop_Click);
 			// 
 			// RunForm
 			// 
 			this.AutoScaleDimensions = new System.Drawing.SizeF(10F, 18F);
 			this.AutoScaleMode = System.Windows.Forms.AutoScaleMode.Font;
-			this.ClientSize = new System.Drawing.Size(639, 185);
+			this.ClientSize = new System.Drawing.Size(831, 185);
+			this.Controls.Add(this.btnStop);
 			this.Controls.Add(this.btnStart);
 			this.Controls.Add(this.btnLive);
 			this.Controls.Add(this.btnGrab);
@@ -103,5 +119,6 @@
 		private System.Windows.Forms.Button btnLive;
 		private System.Windows.Forms.Button btnStart;
 		private System.Windows.Forms.ImageList runImageList;
+		private System.Windows.Forms.Button btnStop;
 	}
 }
