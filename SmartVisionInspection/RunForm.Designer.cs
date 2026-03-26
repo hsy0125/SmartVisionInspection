@@ -31,9 +31,9 @@
 			this.components = new System.ComponentModel.Container();
 			System.ComponentModel.ComponentResourceManager resources = new System.ComponentModel.ComponentResourceManager(typeof(RunForm));
 			this.btnGrab = new System.Windows.Forms.Button();
+			this.runImageList = new System.Windows.Forms.ImageList(this.components);
 			this.btnLive = new System.Windows.Forms.Button();
 			this.btnStart = new System.Windows.Forms.Button();
-			this.runImageList = new System.Windows.Forms.ImageList(this.components);
 			this.btnStop = new System.Windows.Forms.Button();
 			this.SuspendLayout();
 			// 
@@ -49,6 +49,15 @@
 			this.btnGrab.Text = "촬상";
 			this.btnGrab.UseVisualStyleBackColor = true;
 			this.btnGrab.Click += new System.EventHandler(this.btnGrab_Click);
+			// 
+			// runImageList
+			// 
+			this.runImageList.ImageStream = ((System.Windows.Forms.ImageListStreamer)(resources.GetObject("runImageList.ImageStream")));
+			this.runImageList.TransparentColor = System.Drawing.Color.Transparent;
+			this.runImageList.Images.SetKeyName(0, "camera_color.png");
+			this.runImageList.Images.SetKeyName(1, "live-64.png");
+			this.runImageList.Images.SetKeyName(2, "start-64.png");
+			this.runImageList.Images.SetKeyName(3, "stop-64.png");
 			// 
 			// btnLive
 			// 
@@ -76,15 +85,6 @@
 			this.btnStart.UseVisualStyleBackColor = true;
 			this.btnStart.Click += new System.EventHandler(this.btnStart_Click);
 			// 
-			// runImageList
-			// 
-			this.runImageList.ImageStream = ((System.Windows.Forms.ImageListStreamer)(resources.GetObject("runImageList.ImageStream")));
-			this.runImageList.TransparentColor = System.Drawing.Color.Transparent;
-			this.runImageList.Images.SetKeyName(0, "camera_color.png");
-			this.runImageList.Images.SetKeyName(1, "live-64.png");
-			this.runImageList.Images.SetKeyName(2, "start-64.png");
-			this.runImageList.Images.SetKeyName(3, "stop-64.png");
-			// 
 			// btnStop
 			// 
 			this.btnStop.ImageIndex = 3;
@@ -94,7 +94,7 @@
 			this.btnStop.Name = "btnStop";
 			this.btnStop.Size = new System.Drawing.Size(173, 129);
 			this.btnStop.TabIndex = 4;
-			this.btnStop.Text = "검사";
+			this.btnStop.Text = "정지";
 			this.btnStop.UseVisualStyleBackColor = true;
 			this.btnStop.Click += new System.EventHandler(this.btnStop_Click);
 			// 

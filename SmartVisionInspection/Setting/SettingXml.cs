@@ -9,6 +9,11 @@ using SmartVisionInspection.Util;
 
 namespace SmartVisionInspection.Setting
 {
+	public enum CommunicatorType
+	{
+		None,
+		WCF
+	}
 	public class SettingXml
 	{
 		//환경설정 파일 저장 경로
@@ -91,6 +96,10 @@ namespace SmartVisionInspection.Setting
 
 		//#15_INSP_WORKER#1 연속 검사 모드
 		public bool CycleMode { get; set; } = false;
+
+		//#19_VISION_SEQUENCE#1 통신타입, IP 설정
+		public CommunicatorType CommType { get; set; }
+		public string CommIP { get; set; } = "127.0.0.1";
 
 	}
 }
