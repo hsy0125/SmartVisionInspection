@@ -8,15 +8,16 @@ using System.Runtime.InteropServices;
 using System.Text;
 using System.Threading.Tasks;
 using System.Windows.Forms;
-using SmartVisionInspection.Algorithm;
-using SmartVisionInspection.Grab;
-using SmartVisionInspection.Inspect;
-using SmartVisionInspection.Setting;
-using SmartVisionInspection.Teach;
-using SmartVisionInspection.Util;
 using Microsoft.Win32;
 using OpenCvSharp;
 using OpenCvSharp.Extensions;
+using SmartVisionInspection.Algorithm;
+using SmartVisionInspection.Grab;
+using SmartVisionInspection.Inspect;
+using SmartVisionInspection.Sequence;
+using SmartVisionInspection.Setting;
+using SmartVisionInspection.Teach;
+using SmartVisionInspection.Util;
 
 
 namespace SmartVisionInspection.Core
@@ -74,10 +75,13 @@ namespace SmartVisionInspection.Core
 		//가장 최근 모델 파일 경로를 저장하는 변수
 		private bool _lastestModelOpen = false;
 
+		public bool SaveCamImage { get; set; } = false;
 		public bool UseCamera { get; set; } = false;
-
 		private string _lotNumber;
 		private string _serialID;
+		public int SaveImageIndex { get; set; } = 0;
+		private bool _isInspectMode = false;
+		private string _capturePath = "";
 
 		public InspStage() { }
 		public ImageSpace ImageSpace
@@ -158,6 +162,10 @@ namespace SmartVisionInspection.Core
 
 				InitModelGrab(MAX_GRAB_BUF);
 			}
+			//#19_VISION_SEQUENCE#3 VisionSequence 초기화
+			VisionSequence.Inst.InitSequence();
+			VisionSequence.Inst.SeqCommand += SeqCommand;
+
 
 			//#16_LAST_MODELOPEN#5 마지막 모델 열기 여부 확인
 			if (!LastestModelOpen())
@@ -505,6 +513,18 @@ namespace SmartVisionInspection.Core
 
 			_imageSpace.Split(bufferIndex);
 
+			if (SaveCamImage && Directory.Exists(_capturePath))
+			{
+				Mat curImage = GetMat(0, eImageChannel.Color);
+
+				if (curImage != null)
+				{
+					string imageName = $"{++SaveImageIndex:D4}.png";
+					string savePath = Path.Combine(_capturePath, imageName);
+					curImage.SaveImage(savePath);
+				}
+			}
+
 			DisplayGrabImage(bufferIndex);
 
 			//#8_LIVE#2 LIVE 모드일때, Grab을 계속 실행하여, 반복되도록 구현
@@ -515,6 +535,9 @@ namespace SmartVisionInspection.Core
 				await Task.Delay(100);  // 비동기 대기
 				_grabManager.Grab(bufferIndex, true);  // 다음 촬영 시작
 			}
+
+			if (_isInspectMode)
+				RunInspect();
 		}
 
 		private void DisplayGrabImage(int bufferIndex)
@@ -725,6 +748,11 @@ namespace SmartVisionInspection.Core
 			if (_inspWorker != null)
 				_inspWorker.Stop();
 
+			//#19_VISION_SEQUENCE#4 시퀀스 정지
+			VisionSequence.Inst.StopAutoRun();
+			_isInspectMode = false;
+
+
 			SetWorkingState(WorkingState.NONE);
 		}
 
@@ -745,7 +773,66 @@ namespace SmartVisionInspection.Core
 
 			return true;
 		}
+		//#19_VISION_SEQUENCE#7 시퀀스 명령 처리
+		private void SeqCommand(object sender, SeqCmd seqCmd, object Param)
+		{
+			switch (seqCmd)
+			{
+				case SeqCmd.InspStart:
+					{
+						//#WCF_FSM#5 카메라 촬상 후, 검사 진행
+						SLogger.Write("MMI : InspStart", SLogger.LogType.Info);
 
+						//검사 시작
+						string errMsg;
+
+						if (UseCamera)
+						{
+							if (!Grab(0))
+							{
+								errMsg = string.Format("Failed to grab");
+								SLogger.Write(errMsg, SLogger.LogType.Error);
+							}
+						}
+						else
+						{
+							if (!VirtualGrab())
+							{
+								errMsg = string.Format("Failed to virtual grab");
+								SLogger.Write(errMsg, SLogger.LogType.Error);
+							}
+						}
+					}
+					break;
+				case SeqCmd.InspEnd:
+					{
+						SLogger.Write("MMI : InspEnd", SLogger.LogType.Info);
+
+						//모든 검사 종료
+						string errMsg = "";
+
+						//검사 완료에 대한 처리
+						SLogger.Write("검사 종료");
+
+						VisionSequence.Inst.VisionCommand(Vision2Mmi.InspEnd, errMsg);
+					}
+					break;
+			}
+		}
+		private void RunInspect()
+		{
+			ResetDisplay();
+
+			bool isDefect = false;
+			if (!_inspWorker.RunInspect(out isDefect))
+			{
+				string errMsg = string.Format("Failed to inspect");
+				SLogger.Write(errMsg, SLogger.LogType.Error);
+			}
+
+			//#WCF_FSM#6 비젼 -> 제어에 검사 완료 및 결과 전송
+			VisionSequence.Inst.VisionCommand(Vision2Mmi.InspDone, isDefect);
+		}
 		//검사를 위한 준비 작업
 		public bool InspectReady(string lotNumber, string serialID)
 		{
@@ -766,6 +853,32 @@ namespace SmartVisionInspection.Core
 		{
 			SLogger.Write("Action : StartAutoRun");
 
+			if (SaveCamImage && _model != null)
+			{
+				SaveImageIndex = 0;
+
+				_capturePath = Path.Combine(Path.GetDirectoryName(_model.ModelPath), "Capture");
+				if (!Directory.Exists(_capturePath))
+				{
+					Directory.CreateDirectory(_capturePath);
+				}
+				else
+				{
+					string[] files = Directory.GetFiles(_capturePath);
+					foreach (string file in files)
+					{
+						try
+						{
+							File.Delete(file);
+						}
+						catch (Exception ex)
+						{
+							SLogger.Write($"Failed to delete file: {file}. Exception: {ex.Message}", SLogger.LogType.Error);
+						}
+					}
+				}
+			}
+
 			string modelPath = CurModel.ModelPath;
 			if (modelPath == "")
 			{
@@ -779,6 +892,10 @@ namespace SmartVisionInspection.Core
 
 			SetWorkingState(WorkingState.INSPECT);
 
+			//#19_VISION_SEQUENCE#5 자동검사 시작
+			string modelName = Path.GetFileNameWithoutExtension(modelPath);
+			VisionSequence.Inst.StartAutoRun(modelName);
+			_isInspectMode = true;
 			return true;
 		}
 
@@ -791,7 +908,13 @@ namespace SmartVisionInspection.Core
 				cameraForm.SetWorkingState(workingState);
 			}
 		}
-
+		public void SetExposure(long exposureTime)
+		{
+			if (_grabManager != null)
+			{
+				_grabManager.SetExposureTime(exposureTime);
+			}
+		}
 
 		#region Disposable
 
@@ -804,6 +927,10 @@ namespace SmartVisionInspection.Core
 				if (disposing)
 				{
 					// Dispose managed resources.
+
+					//#19_VISION_SEQUENCE#6 시퀀스 이벤트 해제
+					VisionSequence.Inst.SeqCommand -= SeqCommand;
+
 					if (_saigeAI != null)
 					{
 						_saigeAI.Dispose();

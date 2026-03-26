@@ -56,6 +56,10 @@
     <Reference Include="log4net">
       <HintPath>..\ExternalLib\Dll\Log4Net\log4net.dll</HintPath>
     </Reference>
+    <Reference Include="MessagingLibrary, Version=1.0.0.0, Culture=neutral, processorArchitecture=AMD64">
+      <SpecificVersion>False</SpecificVersion>
+      <HintPath>..\ExternalLib\Dll\MessagingLibrary\MessagingLibrary.dll</HintPath>
+    </Reference>
     <Reference Include="MvCameraControl.Net, Version=4.5.0.2, Culture=neutral, PublicKeyToken=a3c7c5e3a730cd12, processorArchitecture=AMD64">
       <SpecificVersion>False</SpecificVersion>
       <HintPath>..\ExternalLib\Dll\HikRobot\MvCameraControl.Net.dll</HintPath>
@@ -80,6 +84,7 @@
     </Reference>
     <Reference Include="System" />
     <Reference Include="System.Core" />
+    <Reference Include="System.ServiceModel" />
     <Reference Include="System.Xaml" />
     <Reference Include="System.Xml.Linq" />
     <Reference Include="System.Data.DataSetExtensions" />
@@ -189,11 +194,19 @@
     <Compile Include="RunForm.Designer.cs">
       <DependentUpon>RunForm.cs</DependentUpon>
     </Compile>
+    <Compile Include="Sequence\Communicator.cs" />
+    <Compile Include="Sequence\VisionSequence.cs" />
     <Compile Include="Setting\CameraSetting.cs">
       <SubType>UserControl</SubType>
     </Compile>
     <Compile Include="Setting\CameraSetting.Designer.cs">
       <DependentUpon>CameraSetting.cs</DependentUpon>
+    </Compile>
+    <Compile Include="Setting\CommunicatorSetting.cs">
+      <SubType>UserControl</SubType>
+    </Compile>
+    <Compile Include="Setting\CommunicatorSetting.Designer.cs">
+      <DependentUpon>CommunicatorSetting.cs</DependentUpon>
     </Compile>
     <Compile Include="Setting\PathSetting.cs">
       <SubType>UserControl</SubType>
@@ -287,6 +300,9 @@
     <EmbeddedResource Include="Setting\CameraSetting.resx">
       <DependentUpon>CameraSetting.cs</DependentUpon>
     </EmbeddedResource>
+    <EmbeddedResource Include="Setting\CommunicatorSetting.resx">
+      <DependentUpon>CommunicatorSetting.cs</DependentUpon>
+    </EmbeddedResource>
     <EmbeddedResource Include="Setting\PathSetting.resx">
       <DependentUpon>PathSetting.cs</DependentUpon>
     </EmbeddedResource>
@@ -315,6 +331,9 @@
   </ItemGroup>
   <ItemGroup>
     <None Include="App.config" />
+  </ItemGroup>
+  <ItemGroup>
+    <WCFMetadata Include="Connected Services\" />
   </ItemGroup>
   <Import Project="$(MSBuildToolsPath)\Microsoft.CSharp.targets" />
 </Project>
